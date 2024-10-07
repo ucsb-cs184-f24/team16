@@ -3,6 +3,7 @@
 ## Boming Kong
 
 ### Background Knowledge
+
 Programming languages I know: C/C++, Rust, Lisp, Python
 
 Platform I'm familiar: Linux
