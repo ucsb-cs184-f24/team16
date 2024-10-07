@@ -50,3 +50,8 @@ so I'm familiar with SCRUM.
 ## Ziyang Huang
 
 ### Background Knowledge
+Programming languages I know: C++, Python
+
+Platform I'm familiar: Windows, macOS
+
+I don't know anything about native React, but I'm willing to learn it and make a project.
