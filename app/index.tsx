@@ -1,4 +1,5 @@
 import {Text, View} from "react-native";
+import {Schedule} from "@/components/Schedule";
 
 export default function Index() {
   return (
@@ -9,7 +10,7 @@ export default function Index() {
             alignItems: "center",
           }}
       >
-        <Text>Edit app/index.tsx to edit this screen.</Text>
+        <Schedule events={null}/>
       </View>
   );
 }
