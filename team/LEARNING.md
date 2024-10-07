@@ -24,6 +24,29 @@ I have a little experience with ReactNative and experience with SQL databases.
 
 ### Background Knowledge
 
+Programming languages I know:
+- ASM (MIPS and Intel)
+- AutoHotKey
+- Bash
+- Batch file
+- C
+- C++
+- Coq
+- Go
+- Java
+- JavaScript
+- OCaml
+- Python
+- SQL (MySQL and PostgreSQL)
+
+Platform I'm familiar:
+- Windows
+- MacOS
+- Linux (Ubuntu, Fedora)
+
+I have a little experience with React, but not ReactNative. I have also attended CS 156 in the past,
+so I'm familiar with SCRUM.
+
 ## Ziyang Huang
 
 ### Background Knowledge
