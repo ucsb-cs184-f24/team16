@@ -2,6 +2,7 @@
 
 | Role          | Name |
 |---------------|------|
-| Product Owner |      |
-| Scrum Master  |      |
-| Scribe        |      |
+| Product Owner |Tiger Yu|
+| Scrum Master  |Ziyang Huang|
+| Scribe        |Boming Kong|
+| Team Memeber | Leyang Ni|
