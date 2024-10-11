@@ -1,4 +1,4 @@
-# Section 01
+# Section 02
 Assigned: Friday, 10/04/2024 Due: Thursday, 10/10/2024
 
 ## Scrum
