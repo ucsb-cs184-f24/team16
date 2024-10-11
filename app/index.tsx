@@ -1,5 +1,5 @@
 import {Text, View} from "react-native";
-import {Schedule} from "@/components/Schedule";
+import Schedule from "@/components/Schedule";
 
 export default function Index() {
   return (
@@ -10,7 +10,7 @@ export default function Index() {
             alignItems: "center",
           }}
       >
-        <Schedule events={null}/>
+        <Schedule/>
       </View>
   );
 }
