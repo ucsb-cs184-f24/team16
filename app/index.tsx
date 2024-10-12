@@ -1,14 +1,18 @@
-import {View} from "react-native";
-import Schedule from "@/components/Schedule";
-import {useNavigation} from "@react-navigation/native";
+import {Alert, View} from 'react-native';
+import Schedule from '@/components/Schedule';
+import {useAuthenticate} from '@/app/canvas-auth';
 
 export default function Index() {
-  const navigation = useNavigation();
-
-  setTimeout((): void => {
-    // @ts-ignore
-    navigation.navigate('canvas-auth');
-  }, 1000);
+  useAuthenticate("/", async () => {
+    const response = await fetch("https://ucsb.instructure.com/api/v1/users/self", {
+      "method": "GET",
+      "headers": {
+        "accept": "application/json",
+        "accept-language": "en-US,en;q=0.9"
+      }
+    });
+    Alert.alert("Canvas API Response", await response.text());
+  });
 
   return (
       <View
