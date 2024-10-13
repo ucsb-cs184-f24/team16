@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Cookies = { [p: string]: string };
 type PathName = "/" | `./${string}` | `../${string}` | ".." | `${string}:${string}`;
-const COOKIE_KEY = "canvas.cookie";
+const COOKIE_KEY = "ucsb.cookie";
 
 function stringifyCookies(cookies: Cookies) {
   return Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join("; ");
@@ -13,7 +13,7 @@ function stringifyCookies(cookies: Cookies) {
 
 async function checkAuth(cookies: Cookies): Promise<string | false> {
   const cookie = stringifyCookies(cookies);
-  const response = await fetch("https://ucsb.instructure.com/api/v1/users/self", {
+  const response = await fetch("https://my.sa.ucsb.edu/gold/Home.aspx", {
     "method": "GET",
     "headers": {
       "accept": "*/*",
@@ -21,17 +21,17 @@ async function checkAuth(cookies: Cookies): Promise<string | false> {
       "cookie": cookie
     }
   });
-  return response.ok && cookie;
+  return response.status === 200 && cookie;
 }
 
 export default function CanvasAuth() {
   const {redirect}: {redirect: PathName} = useLocalSearchParams();
   return (
       <WebView
-          source={{uri: "https://ucsb.instructure.com/"}}
+          source={{uri: "https://my.sa.ucsb.edu/gold/Home.aspx"}}
           onNavigationStateChange={async (navState) => {
-            if (navState.url === "https://ucsb.instructure.com/") {
-              const cookies = await CookieHandler.get("https://ucsb.instructure.com/", true);
+            if (navState.url === "https://my.sa.ucsb.edu/gold/Home.aspx") {
+              const cookies = await CookieHandler.get("https://my.sa.ucsb.edu/", true);
               if (await checkAuth(cookies)) {
                 router.navigate({
                   pathname: redirect,
@@ -58,10 +58,10 @@ async function handleCookies(cookies: Cookies): Promise<string> {
 }
 
 function navigate(redirect: PathName) {
-  router.navigate({pathname: '/canvas-auth', params: {redirect}});
+  router.navigate({pathname: '/ucsb-auth', params: {redirect}});
 }
 
-export function useCanvasAuth(redirect: PathName, callback: (cookie: string) => any): void {
+export function useUCSBAuth(redirect: PathName, callback: (cookie: string) => any): void {
   const params = useLocalSearchParams();
   if (params.canvas_cookies) {
     const cookieJSON = typeof params.canvas_cookies === "string" ? params.canvas_cookies : params.canvas_cookies[0];
