@@ -55,3 +55,31 @@ Programming languages I know: C++, Python
 Platform I'm familiar: Windows, macOS
 
 I don't know anything about native React, but I'm willing to learn it and make a project.
+
+# Resources
+## Leyang
+Posted: https://akcoding.com/react-native/ 
+Liked: https://icons.expo.fyi/Index
+
+## Ziyang Huang
+Posted:
+Liked: 
+
+## Tiger Yu
+Posted:
+Liked:
+
+## Boming Kong
+Posted:
+Liked: 
+
+# Platform Information: React Native
+
+## Benefits:
+1. Cross-Platform Development: can work on both iOS and Android
+2. Abundant Resources: there are various resources online to support development.
+
+## Challenges: 
+1. Compatibility issues might occur. 
+
+
