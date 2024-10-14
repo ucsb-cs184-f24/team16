@@ -70,8 +70,8 @@ Posted:
 Liked:
 
 ## Boming Kong
-Posted:
-Liked: 
+Posted: https://www.learn-ts.org/
+Liked: https://reactnative.dev/docs/tutorial
 
 # Platform Information: React Native
 
