@@ -21,7 +21,7 @@ async function checkAuth(cookies: Cookies): Promise<string | false> {
       "cookie": cookie
     }
   });
-  return response.status === 200 && cookie;
+  return response.url === "https://my.sa.ucsb.edu/gold/Home.aspx" && cookie;
 }
 
 export default function CanvasAuth() {
@@ -31,11 +31,11 @@ export default function CanvasAuth() {
           source={{uri: "https://my.sa.ucsb.edu/gold/Home.aspx"}}
           onNavigationStateChange={async (navState) => {
             if (navState.url === "https://my.sa.ucsb.edu/gold/Home.aspx") {
-              const cookies = await CookieHandler.get("https://my.sa.ucsb.edu/", true);
+              const cookies = await CookieHandler.get("https://my.sa.ucsb.edu/gold/", true);
               if (await checkAuth(cookies)) {
                 router.navigate({
                   pathname: redirect,
-                  params: {canvas_cookies: encodeURIComponent(JSON.stringify(cookies))}
+                  params: {ucsb_cookies: encodeURIComponent(JSON.stringify(cookies))}
                 });
               }
             }
@@ -48,9 +48,9 @@ export default function CanvasAuth() {
 }
 
 async function handleCookies(cookies: Cookies): Promise<string> {
-  await AsyncStorage.setItem(COOKIE_KEY, JSON.stringify(cookies));
   const cookie = await checkAuth(cookies);
   if (cookie) {
+    await AsyncStorage.setItem(COOKIE_KEY, JSON.stringify(cookies));
     return cookie;
   } else {
     throw "Authentication error";
@@ -63,8 +63,8 @@ function navigate(redirect: PathName) {
 
 export function useUCSBAuth(redirect: PathName, callback: (cookie: string) => any): void {
   const params = useLocalSearchParams();
-  if (params.canvas_cookies) {
-    const cookieJSON = typeof params.canvas_cookies === "string" ? params.canvas_cookies : params.canvas_cookies[0];
+  if (params.ucsb_cookies) {
+    const cookieJSON = typeof params.ucsb_cookies === "string" ? params.ucsb_cookies : params.ucsb_cookies[0];
     const cookies: Cookies = JSON.parse(cookieJSON);
     handleCookies(cookies).then(callback, () => navigate(redirect));
   } else {

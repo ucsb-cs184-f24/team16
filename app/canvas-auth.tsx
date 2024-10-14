@@ -48,9 +48,9 @@ export default function CanvasAuth() {
 }
 
 async function handleCookies(cookies: Cookies): Promise<string> {
-  await AsyncStorage.setItem(COOKIE_KEY, JSON.stringify(cookies));
   const cookie = await checkAuth(cookies);
   if (cookie) {
+    await AsyncStorage.setItem(COOKIE_KEY, JSON.stringify(cookies));
     return cookie;
   } else {
     throw "Authentication error";
