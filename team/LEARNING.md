@@ -63,7 +63,7 @@ Liked: https://icons.expo.fyi/Index
 
 ## Ziyang Huang
 Posted: https://reactnative.dev/docs/tutorial
-Liked: 
+Liked: https://www.learn-ts.org/
 
 ## Tiger Yu
 Posted:
