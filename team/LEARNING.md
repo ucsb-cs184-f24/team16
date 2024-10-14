@@ -62,7 +62,7 @@ Posted: https://akcoding.com/react-native/
 Liked: https://icons.expo.fyi/Index
 
 ## Ziyang Huang
-Posted:
+Posted: https://reactnative.dev/docs/tutorial
 Liked: 
 
 ## Tiger Yu
