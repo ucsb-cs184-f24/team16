@@ -66,8 +66,8 @@ Posted: https://reactnative.dev/docs/tutorial
 Liked: https://www.learn-ts.org/
 
 ## Tiger Yu
-Posted:
-Liked:
+Posted: https://github.com/react-native-async-storage/async-storage/tree/main/packages/default-storage
+Liked: https://www.learn-ts.org/
 
 ## Boming Kong
 Posted: https://www.learn-ts.org/
