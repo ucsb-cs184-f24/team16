@@ -19,7 +19,7 @@
 | Role                   | Name     |
 |------------------------|----------|
 | Sprint Planning Leader | Tiger Yu |
-| Retro Leader           |          |
+| Retro Leader           | Leyang Ni|
 
 
 ## Sprint 03
