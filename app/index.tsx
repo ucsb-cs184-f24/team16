@@ -3,6 +3,7 @@ import Schedule from '@/components/Schedule';
 import {useCanvasAuth} from '@/app/canvas-auth';
 import {useUCSBAuth} from "@/app/ucsb-auth";
 import {jsdom} from 'jsdom-jscore-rn';
+import {GetQuarter} from '@/app/getQuarter';
 
 export default function Index() {
   useCanvasAuth("/", async () => {
@@ -54,6 +55,9 @@ export default function Index() {
       Alert.alert("UCSB Schedule", JSON.stringify(events));
     }
   });
+
+  const Quarterinfo = await GetQuarter();
+  Alert.alert("Quarter info: ", JSON.stringify(Quarterinfo);
 
   return (
       <View
