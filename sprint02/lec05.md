@@ -10,17 +10,16 @@ Tiger:
 2. Still working on iOS authentication (cookie does not work properly)
 
 Boming:
-1. 
+1. Learned React Native basics
 2. 
 
 Leyang:
-1. 
+1. Learned React Native basics
 2. 
 
 Ziyang:
-1. 
+1. Learned React Native basics
 2. 
 
 ## General Notes
 1. Canvas schedule, Course schedule (gold)
-2. 
