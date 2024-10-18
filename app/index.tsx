@@ -5,26 +5,21 @@ import {useUCSBAuth} from "@/app/ucsb-auth";
 import {jsdom} from 'jsdom-jscore-rn';
 
 export default function Index() {
-  useCanvasAuth("/", async () => {
+  useCanvasAuth("/", async headers => {
     const response = await fetch("https://ucsb.instructure.com/api/v1/users/self", {
       "method": "GET",
-      "headers": {
-        "accept": "application/json",
-        "accept-language": "en-US,en;q=0.9"
-      }
+      "headers": headers
     });
     Alert.alert("Canvas API Response", await response.text());
   });
 
-  useUCSBAuth("/", async () => {
-    const response = await fetch("https://my.sa.ucsb.edu/gold/WeeklyStudentSchedule.aspx", {
+  useUCSBAuth("/", async headers => {
+    const response = await fetch("https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/WeeklyStudentSchedule.aspx", {
       "method": "GET",
-      "headers": {
-        "accept": "text/html",
-        "accept-language": "en-US,en;q=0.9"
-      }
+      "headers": headers
     });
     const dom = jsdom(await response.text());
+    console.log("Dom", dom.title);
     const eventsElement = dom.querySelector('#pageContent_events');
     if (eventsElement) {
       const events: {[p: string]: {
