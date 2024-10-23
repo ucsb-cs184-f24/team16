@@ -3,7 +3,7 @@ import Schedule from '@/components/Schedule';
 import {useCanvasAuth} from '@/app/canvas-auth';
 import {useUCSBAuth} from "@/app/ucsb-auth";
 import {jsdom} from 'jsdom-jscore-rn';
-import {getQuarter} from './app/api';
+import {getQuarter} from '@/helpers/api';
 
 export default function Index() {
   useCanvasAuth("/", async headers => {
@@ -51,14 +51,21 @@ export default function Index() {
     }
   });
 
-  try {
-        const result = await fetchCurrentQuarter();
-          // Convert the result to a plain JSON string and display it in an alert
-          Alert.alert("API Result", JSON.stringify(result, null, 2));
-        } catch (error) {
-          // Show an error alert if the API call fails
-          Alert.alert("Error", error.message);
-    }
+  getQuarter().then(result => {
+    console.log("API Result:", result)
+    Alert.alert("API Result:", JSON.stringify(result, null, 2));
+  }, error => {
+    Alert.alert("Error", error.message);
+    console.log("Error", error.message);
+  });
+//   try {
+//         const result = await getQuarter();
+//             console.log("API Result:", result)
+//             Alert.alert("API Result:", JSON.stringify(result, null, 2));
+//         } catch (error) {
+//             Alert.alert("Error", error.message);
+//             console.log("Error", error.message);
+//   }
 
   return (
       <View
