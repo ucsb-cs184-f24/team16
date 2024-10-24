@@ -19,7 +19,7 @@ type Quarter = {
   "lastDayThirdWeek": string
 };
 
-export async function getQuarter(): Quarter {
+export async function getQuarter(): Promise<Quarter> {
   const url = 'https://api-transformer.onrender.com//https://api.ucsb.edu/academics/quartercalendar/v1/quarters/current';
   const headers = {
     'accept': 'application/json',
@@ -28,13 +28,12 @@ export async function getQuarter(): Quarter {
   };
 
   try {
-    const response = await fetch(url, { method: 'GET', headers: { headers: JSON.stringify(headers) } });
+    const response = await fetch(url, {method: 'GET', headers: {headers: JSON.stringify(headers)}});
     if (!response.ok) {
       throw new Error('Failed to fetch quarter info');
     }
-    const data: Quarter = await response.json();
-    return data;
+    return response.json();
   } catch (error) {
     throw error;
   }
-};
+}
