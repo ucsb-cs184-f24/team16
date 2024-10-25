@@ -32,3 +32,10 @@
 2. Start reading all the notes if absent
 3. Start using communication tools more
 4. Continue posting resources
+
+## Experiment/Change
+Updated Oct 24
+
+* We established guidelines for issue tracking, creating pull requests, and managing branches.
+* We believe the first retro was successful because as it helped us save time and kick-start the project development by providing clearer guidelines and fostering better organization.
+* We will keep the change.
