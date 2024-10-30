@@ -12,6 +12,7 @@ import {
   TimelineProps,
   CalendarUtils
 } from 'react-native-calendars';
+import {Quarter, UCSBEvents} from "@/helpers/api";
 
 const EVENT_COLOR = '#e6add8';
 const today = new Date();
@@ -134,7 +135,20 @@ const timelineEvents: TimelineEventProps[] = [
 
 const INITIAL_TIME = {hour: 9, minutes: 0};
 const EVENTS: TimelineEventProps[] = timelineEvents;
-export default class Schedule extends Component {
+
+interface ScheduleProps {
+  quarter: Quarter | null;
+  canvasEvents: object | null; // TODO: Define a type
+  ucsbEvents: UCSBEvents | null;
+}
+
+interface ScheduleState {
+  currentDate: string;
+  events: TimelineEventProps[];
+  eventsByDate: Record<string, TimelineEventProps[]>;
+}
+
+export default class Schedule extends Component<ScheduleProps, ScheduleState> {
   state = {
     currentDate: getDate(),
     events: EVENTS,
@@ -234,6 +248,7 @@ export default class Schedule extends Component {
   };
 
   render() {
+    const {quarter, canvasEvents, ucsbEvents} = this.props;
     const {currentDate, eventsByDate} = this.state;
 
     return (
