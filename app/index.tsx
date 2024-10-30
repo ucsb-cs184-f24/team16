@@ -8,19 +8,19 @@ import {Mutex} from "async-mutex";
 
 export default function Index() {
   const [quarter, setQuarter] = useState<Quarter | null>(null);
-  const quarterSuccesRef = useRef<boolean>(false);
+  const quarterSuccessRef = useRef<boolean>(false);
   const quarterMutexRef = useRef<Mutex | null>(null);
   if (!quarterMutexRef.current) {
     quarterMutexRef.current = new Mutex();
   }
   quarterMutexRef.current.acquire().then(async release => {
-    if (!quarterSuccesRef.current) {
+    if (!quarterSuccessRef.current) {
       try {
         const quarter = await getQuarter();
         console.log("Quarter API Result:", quarter);
         if (quarter) {
           setQuarter(quarter);
-          quarterSuccesRef.current = true;
+          quarterSuccessRef.current = true;
         }
       } catch (e) {
         console.error(e);
