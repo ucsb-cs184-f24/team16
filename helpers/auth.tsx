@@ -2,7 +2,8 @@ import {WebView} from 'react-native-webview';
 import {router, Routes, useLocalSearchParams} from 'expo-router';
 import * as CookieHandler from 'react-native-cookie-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React from "react";
+import React, {useState} from "react";
+import {Promisable} from "type-fest";
 
 type Cookies = Record<string, string>;
 
@@ -16,20 +17,20 @@ export default function generateAuth(pathname: Routes,
                                      api_test_url: string,
                                      start_url: string,
                                      cookie_url: string,
-                                     get_headers: (cookie: string) => HeadersInit,
-                                     check_response: (response: Response) => boolean
+                                     get_headers: (cookie: string) => Promisable<HeadersInit>,
+                                     check_response: (response: Response) => Promisable<boolean>
 ): [
   () => React.JSX.Element,
-  (redirect: Routes, callback: (headers: HeadersInit) => any) => void
+  (redirect: Routes, callback: (headers: HeadersInit) => PromiseLike<boolean | void> | boolean | void) => void
 ] {
   async function checkAuth(cookies: Cookies): Promise<string | false> {
     const cookie = stringifyCookies(cookies);
     const response = await fetch(api_test_url, {
       "method": "GET",
-      "headers": get_headers(cookie),
+      "headers": await get_headers(cookie),
     });
-    console.log(await response.text());
-    return check_response(response) && cookie;
+    // console.log(await response.text());
+    return await check_response(response) && cookie;
   }
 
   function Auth() {
@@ -62,7 +63,7 @@ export default function generateAuth(pathname: Routes,
       await AsyncStorage.setItem(cookie_key, JSON.stringify(cookies));
       return get_headers(cookie);
     } else {
-      throw "Authentication error";
+      throw new Error("Authentication error");
     }
   }
 
@@ -70,19 +71,22 @@ export default function generateAuth(pathname: Routes,
     router.navigate({pathname, params: {redirect}});
   }
 
-  function useAuth(redirect: Routes, callback: (headers: HeadersInit) => any): void {
+  function useAuth(redirect: Routes, callback: (headers: HeadersInit) => Promisable<boolean | void>): void {
+    const [success, setSuccess] = useState<boolean>(false);
     const param = useLocalSearchParams()[param_key];
-    if (param) {
+    if (!success && param) {
       const cookieJSON = typeof param === "string" ? param : param[0];
       const cookies: Cookies = JSON.parse(cookieJSON);
-      handleCookies(cookies).then(callback, () => navigate(redirect));
+      handleCookies(cookies).then(async headers => Promise.resolve(await callback(headers) !== false)
+          .then(setSuccess, console.error), () => navigate(redirect));
     } else {
       (async () => {
         const cookieJSON = await AsyncStorage.getItem(cookie_key);
         const cookies: Cookies = cookieJSON
             ? JSON.parse(cookieJSON)
             : await CookieHandler.get(cookie_url, true);
-        handleCookies(cookies).then(callback, () => navigate(redirect));
+        handleCookies(cookies).then(async headers => Promise.resolve(await callback(headers) !== false)
+            .then(setSuccess, console.error), () => navigate(redirect));
       })();
     }
   }
