@@ -1,22 +1,41 @@
-import {Alert, View} from 'react-native';
+import {View} from 'react-native';
 import Schedule from '@/components/Schedule';
 import {useCanvasAuth} from '@/app/canvas-auth';
 import {useUCSBAuth} from "@/app/ucsb-auth";
 import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
-import {useState} from "react";
+import {useRef, useState} from "react";
+import {Mutex} from "async-mutex";
 
 export default function Index() {
   const [quarter, setQuarter] = useState<Quarter | null>(null);
-  getQuarter().then(result => {
-    console.log("API Result:", result);
-    setQuarter(result);
-  }, error => Alert.alert("Error", error.message));
+  const quarterSuccessRef = useRef<boolean>(false);
+  const quarterMutexRef = useRef<Mutex | null>(null);
+  if (!quarterMutexRef.current) {
+    quarterMutexRef.current = new Mutex();
+  }
+  quarterMutexRef.current.acquire().then(async release => {
+    if (!quarterSuccessRef.current) {
+      try {
+        const quarter = await getQuarter();
+        console.log("Quarter API Result:", quarter);
+        if (quarter) {
+          setQuarter(quarter);
+          quarterSuccessRef.current = true;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    release();
+  });
 
-  // TODO: Define type for canvasResponse
+  // TODO: Define type for canvasEvents
   const [canvasEvents, setCanvasEvents] = useState<object | null>(null);
   useCanvasAuth("/", async headers => {
     try {
-      setCanvasEvents(await getCanvasEvents(headers))
+      const canvasEvents = await getCanvasEvents(headers);
+      console.log("Canvas API Result:", canvasEvents);
+      setCanvasEvents(canvasEvents);
     } catch (e) {
       console.error(e);
       return false;
@@ -26,7 +45,9 @@ export default function Index() {
   const [UCSBEvents, setUCSBEvents] = useState<UCSBEvents | null>(null);
   useUCSBAuth("/", async headers => {
     try {
-      setUCSBEvents(await getUCSBEvents(headers));
+      const UCSBEvents = await getUCSBEvents(headers);
+      console.log("UCSB API Result:", UCSBEvents);
+      setUCSBEvents(UCSBEvents);
     } catch (e) {
       console.error(e);
       return false;
