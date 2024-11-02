@@ -54,7 +54,7 @@ jobs:
         run: |
           APK_FILE=ios-${{ steps.get-app-version.outputs.version }}.apk
           echo "apk-file=$APK_FILE" >> $GITHUB_OUTPUT
-          mv build-*.ipa $APK_FILE
+          mv build-*.apk $APK_FILE
 
       - name: Upload .apk File
         uses: actions/upload-artifact@v4
