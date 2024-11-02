@@ -57,7 +57,7 @@ jobs:
       - name: Upload .apk File
         uses: actions/upload-artifact@v4
         with:
-          name: team16.apk
+          name: ${{ steps.rename-apk-file.outputs.apk-file }}
           path: ./${{ steps.rename-apk-file.outputs.apk-file }}
 
   create-ipa:
@@ -134,7 +134,7 @@ jobs:
       - name: Upload .ipa File
         uses: actions/upload-artifact@v4
         with:
-          name: team16.ipa
+          name: ${{ steps.rename-ipa-file.outputs.ipa-file }}
           path: ./${{ steps.rename-ipa-file.outputs.ipa-file }}
 
       - name: Clean up keychain and provisioning profile
