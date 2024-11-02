@@ -128,18 +128,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-          merge-multiple: true
-
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Get App Version
         id: get_app_version
         run: echo "version=$(jq -r .expo.version ./app.json)" >> $GITHUB_OUTPUT
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          merge-multiple: true
 
       - name: Create release
         uses: softprops/action-gh-release@v2
