@@ -46,7 +46,7 @@ jobs:
       - name: Upload .apk File
         uses: actions/upload-artifact@v4
         with:
-          name: team16.ipa
+          name: team16.apk
           path: ./*.apk
 
   create-ipa:
