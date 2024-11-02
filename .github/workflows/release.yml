@@ -50,7 +50,7 @@ jobs:
       - name: Rename .apk File
         id: rename-apk-file
         run: |
-          APK_FILE=ios-${{ steps.get-app-version.outputs.version }}.ipa
+          APK_FILE=ios-${{ steps.get-app-version.outputs.version }}.apk
           echo "apk-file=$APK_FILE" >> $GITHUB_OUTPUT
           mv build-*.ipa $APK_FILE
 
