@@ -16,6 +16,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get App Version
+        id: get-app-version
+        run: echo "version=$(jq -r .expo.version ./app.json)" >> $GITHUB_OUTPUT
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -43,11 +47,18 @@ jobs:
       - name: Build Android
         run: ANDROID_HOME=$ANDROID_SDK_ROOT eas build --platform android --profile development --local --non-interactive
 
+      - name: Rename .apk File
+        id: rename-apk-file
+        run: |
+          APK_FILE=ios-${{ steps.get-app-version.outputs.version }}.ipa
+          echo "apk-file=$APK_FILE" >> $GITHUB_OUTPUT
+          mv build-*.ipa $APK_FILE
+
       - name: Upload .apk File
         uses: actions/upload-artifact@v4
         with:
           name: team16.apk
-          path: ./*.apk
+          path: ./${{ steps.rename-apk-file.outputs.apk-file }}
 
   create-ipa:
     name: Create .ipa File
@@ -57,7 +68,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: maxim-lobanov/setup-xcode@v1
+      - name: Get App Version
+        id: get-app-version
+        run: echo "version=$(jq -r .expo.version ./app.json)" >> $GITHUB_OUTPUT
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
@@ -108,11 +124,18 @@ jobs:
       - name: Build iOS
         run: eas build --platform ios --profile development --local --non-interactive
 
+      - name: Rename .ipa File
+        id: rename-ipa-file
+        run: |
+          IPA_FILE=ios-${{ steps.get-app-version.outputs.version }}.ipa
+          echo "ipa-file=$IPA_FILE" >> $GITHUB_OUTPUT
+          mv build-*.ipa $IPA_FILE
+
       - name: Upload .ipa File
         uses: actions/upload-artifact@v4
         with:
           name: team16.ipa
-          path: ./*.ipa
+          path: ./${{ steps.rename-ipa-file.outputs.ipa-file }}
 
       - name: Clean up keychain and provisioning profile
         if: always()
@@ -147,4 +170,4 @@ jobs:
           draft: true
           token: ${{ secrets.TOKEN }}
           files: ./artifacts/*
-          tag_name: v${{ steps.get_app_version.outputs.version }}
+          tag_name: v${{ steps.get-app-version.outputs.version }}
