@@ -13,6 +13,7 @@ import {
   CalendarUtils
 } from 'react-native-calendars';
 import {Quarter, UCSBEvents} from "@/helpers/api";
+import { keys } from 'lodash';
 
 const EVENT_COLOR = '#e6add8';
 const today = new Date();
@@ -136,6 +137,8 @@ const timelineEvents: TimelineEventProps[] = [
 const INITIAL_TIME = {hour: 9, minutes: 0};
 const EVENTS: TimelineEventProps[] = timelineEvents;
 
+
+
 interface ScheduleProps {
   quarter: Quarter | null;
   canvasEvents: object | null; // TODO: Define a type
@@ -156,6 +159,77 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
       [key: string]: TimelineEventProps[];
     }
   };
+
+  componentDidMount() {
+    this.processUCSBEvents();
+  }
+
+  componentDidUpdate(prevProps: ScheduleProps) {
+    if (prevProps.ucsbEvents !== this.props.ucsbEvents) {
+      this.processUCSBEvents();
+    }
+  }
+
+  convert(time: string): string {
+    const timeRegex = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
+    const match = time.match(timeRegex);
+  
+    if (!match) {
+      throw new Error("Invalid time format");
+    }
+  
+    let [ , hours, minutes, period ] = match;
+    let hoursNumber = parseInt(hours);
+  
+    if (period.toUpperCase() === 'PM' && hoursNumber !== 12) {
+      hoursNumber += 12;
+    } else if (period.toUpperCase() === 'AM' && hoursNumber === 12) {
+      hoursNumber = 0;
+    }
+  
+    return `${hoursNumber.toString().padStart(2, '0')}:${minutes}:00`;
+  }
+
+   processUCSBEvents() {
+    const { ucsbEvents } = this.props;
+    if (!ucsbEvents) return;
+
+    this.setState({ eventsByDate: {} });
+
+    const transformedEvents: TimelineEventProps[] = [];
+
+    Object.keys(ucsbEvents).forEach(day => {
+      const events = ucsbEvents[day as keyof UCSBEvents];
+      // console.log(`Events for ${day}:`, events);
+      events.forEach(event => {
+        if (event.start && event.end) {
+          const startFormatted = `${getDate(0)} ${this.convert(event.start)}`;
+          const endFormatted = `${getDate(0)} ${this.convert(event.end)}`;
+
+          transformedEvents.push({
+            start: startFormatted, 
+            end: endFormatted,
+            title: event.content || 'No Title',
+            summary: event.event || '',
+            color: EVENT_COLOR
+          });
+        }
+      });
+    });
+
+    const eventsByDate = groupBy(transformedEvents, e => CalendarUtils.getCalendarDateString(e.start.split(' ')[0]));
+    // console.log("Processed UCSB Events:", eventsByDate);
+    this.setState({ eventsByDate });
+
+
+
+    // const eventsByDate = transformedEvents;
+    // console.log("Processed UCSB Events:", eventsByDate);
+    
+    // this.setState({ eventsByDate });
+
+    // this.setState({ events: transformedEvents });
+  }
 
   marked = {
     [`${getDate(-1)}`]: {marked: true},
@@ -235,6 +309,8 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
     ]);
   };
 
+  
+
   private timelineProps: Partial<TimelineProps> = {
     format24h: true,
     onBackgroundLongPress: this.createNewEvent,
@@ -248,8 +324,13 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
   };
 
   render() {
-    const {quarter, canvasEvents, ucsbEvents} = this.props;
-    const {currentDate, eventsByDate} = this.state;
+    const { quarter, canvasEvents, ucsbEvents } = this.props;
+    const { currentDate, eventsByDate } = this.state;
+
+  // Run processUCSBEvents and capture the output
+    // const eventsByDate = this.processUCSBEvents();
+    console.log("Derived eventsByDate:", eventsByDate);
+
 
     return (
         <CalendarProvider
@@ -274,6 +355,7 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
               scrollToFirst
               initialTime={INITIAL_TIME}
           />
+
         </CalendarProvider>
     );
   }
