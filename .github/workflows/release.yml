@@ -118,3 +118,32 @@ jobs:
         with:
           name: team16.ipa
           path: ./*.ipa
+
+  create-release:
+    name: Create Draft Release
+    needs:
+      - create-apk
+      - create-ipa
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: *
+          merge-multiple: true
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get App Version
+        id: get_app_version
+        run: echo "version=$(jq -r .expo.version ./app.json)" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: artifacts/*
+          tag_name: v${{ steps.get_app_version.outputs.version }}
