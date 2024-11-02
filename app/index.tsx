@@ -1,53 +1,56 @@
-import {Alert, View} from 'react-native';
+import {View} from 'react-native';
 import Schedule from '@/components/Schedule';
 import {useCanvasAuth} from '@/app/canvas-auth';
 import {useUCSBAuth} from "@/app/ucsb-auth";
-import {jsdom} from 'jsdom-jscore-rn';
-import {getQuarter} from '@/helpers/api';
+import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
+import {useRef, useState} from "react";
+import {Mutex} from "async-mutex";
 
 export default function Index() {
-  useCanvasAuth("/", async headers => {
-    const response = await fetch("https://ucsb.instructure.com/api/v1/users/self", {
-      "method": "GET",
-      "headers": headers
-    });
-    Alert.alert("Canvas API Response", await response.text());
+  const [quarter, setQuarter] = useState<Quarter | null>(null);
+  const quarterSuccessRef = useRef<boolean>(false);
+  const quarterMutexRef = useRef<Mutex | null>(null);
+  if (!quarterMutexRef.current) {
+    quarterMutexRef.current = new Mutex();
+  }
+  quarterMutexRef.current.acquire().then(async release => {
+    if (!quarterSuccessRef.current) {
+      try {
+        const quarter = await getQuarter();
+        console.log("Quarter API Result:", quarter);
+        if (quarter) {
+          setQuarter(quarter);
+          quarterSuccessRef.current = true;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    release();
   });
 
+  // TODO: Define type for canvasEvents
+  const [canvasEvents, setCanvasEvents] = useState<object | null>(null);
+  useCanvasAuth("/", async headers => {
+    try {
+      const canvasEvents = await getCanvasEvents(headers);
+      console.log("Canvas API Result:", canvasEvents);
+      setCanvasEvents(canvasEvents);
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  });
+
+  const [UCSBEvents, setUCSBEvents] = useState<UCSBEvents | null>(null);
   useUCSBAuth("/", async headers => {
-    const response = await fetch("https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/WeeklyStudentSchedule.aspx", {
-      "method": "GET",
-      "headers": headers
-    });
-    const dom = jsdom(await response.text());
-    console.log("Dom", dom.title);
-    const eventsElement = dom.querySelector('#pageContent_events');
-    if (eventsElement) {
-      const events: {[p: string]: {
-        start: string | undefined;
-        end: string | undefined;
-        content: string | undefined;
-        event: string | undefined;
-      }[]} = {};
-      for (const [day, selector] of Object.entries({
-        M: '#pageContent_eventsgroupM',
-        T: '#pageContent_eventsgroupT',
-        W: '#pageContent_eventsgroupW',
-        R: '#pageContent_eventsgroupR',
-        F: '#pageContent_eventsgroupF'
-      })) {
-        const eventGroup = eventsElement.querySelector(selector);
-        if (eventGroup) {
-          const currentEvents = eventGroup.querySelectorAll('.single-event');
-          events[day] = Array.from(currentEvents).map((eventElement: Element) => ({
-            start: eventElement.attributes.getNamedItem('data-start')?.value,
-            end: eventElement.attributes.getNamedItem('data-end')?.value,
-            content: eventElement.attributes.getNamedItem('data-content')?.value,
-            event: eventElement.attributes.getNamedItem('data-event')?.value
-          }));
-        }
-      }
-      Alert.alert("UCSB Schedule", JSON.stringify(events));
+    try {
+      const UCSBEvents = await getUCSBEvents(headers);
+      console.log("UCSB API Result:", UCSBEvents);
+      setUCSBEvents(UCSBEvents);
+    } catch (e) {
+      console.error(e);
+      return false;
     }
   });
 
@@ -75,7 +78,11 @@ export default function Index() {
             alignItems: "center",
           }}
       >
-        <Schedule/>
+        <Schedule
+            quarter={quarter}
+            canvasEvents={canvasEvents}
+            ucsbEvents={UCSBEvents}
+        />
       </View>
   );
 }
