@@ -5,9 +5,33 @@ import {useUCSBAuth} from "@/app/ucsb-auth";
 import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
 import {useRef, useState} from "react";
 import {Mutex} from "async-mutex";
+import { getCoursesForQuarter, Course } from '@/helpers/api';
 
 export default function Index() {
   const [quarter, setQuarter] = useState<Quarter | null>(null);
+  const [courses, setCourses] = useState<Course[] | null>(null);
+  const coursesSuccessRef = useRef<boolean>(false);
+  const coursesMutexRef = useRef<Mutex | null>(null);
+
+  if (!coursesMutexRef.current) {
+    coursesMutexRef.current = new Mutex();
+  }
+  coursesMutexRef.current.acquire().then(async release => {
+    if (!coursesSuccessRef.current && quarter) {
+      try {
+        const courses = await getCoursesForQuarter(quarter.quarter);
+        console.log("Courses API Result:", courses);
+        if (courses) {
+          setCourses(courses);
+          coursesSuccessRef.current = true;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    release();
+  });
+
   const quarterSuccessRef = useRef<boolean>(false);
   const quarterMutexRef = useRef<Mutex | null>(null);
   if (!quarterMutexRef.current) {

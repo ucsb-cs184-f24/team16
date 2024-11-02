@@ -20,6 +20,35 @@ export interface Quarter {
   "lastDayToAddGrad": string;
   "lastDayThirdWeek": string;
 }
+// Add the following code to your api.ts file
+
+export interface Course {
+  courseId: string;
+  title: string;
+  description: string;
+  // Add other relevant fields based on the API response
+}
+
+export async function getCoursesForQuarter(quarter: string): Promise<Course[]> {
+  const url = `https://api-transformer.onrender.com//api.ucsb.edu/students/courses/5572854`;
+  const headers = {
+    'accept': 'application/json',
+    'ucsb-api-version': '1.0',
+    'ucsb-api-key': '1M1qsvRB65v5n0CR9ihHJCsEJF2lCvZe'
+  };
+
+  try {
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      throw new Error('Failed to fetch courses');
+    }
+    const data = await response.json();
+    return data.classes; // Assuming the API returns { classes: Course[] }
+  } catch (error) {
+    throw error;
+  }
+}
+
 
 export async function getQuarter(): Promise<Quarter> {
   const url = 'https://api-transformer.onrender.com//https://api.ucsb.edu/academics/quartercalendar/v1/quarters/current';
