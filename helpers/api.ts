@@ -1,4 +1,6 @@
 import {jsdom} from "jsdom-jscore-rn";
+import "core-js/actual/url";
+import "core-js/actual/url-search-params";
 import dayjs, {Dayjs} from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
@@ -194,8 +196,13 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
   const eventsPromises = courses.map(async (course: any) => {
     const courseId = course.id;
 
+    const url = new URL("https://ucsb.instructure.com/api/v1/calendar_events");
+    url.searchParams.append("type", "assignment");
+    url.searchParams.append("start_date", startDate);
+    url.searchParams.append("end_date", endDate);
+    url.searchParams.append("context_codes[]", courseId);
     const calendarEventsResponse = await fetch(
-      `https://ucsb.instructure.com/api/v1/calendar_events?type=assignment&start_date=${startDate}&end_date=${endDate}&context_codes[]=course_${courseId}`,
+      url.href,
       {
         method: "GET",
         headers: headers,
