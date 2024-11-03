@@ -1,140 +1,26 @@
-import groupBy from 'lodash/groupBy';
-import filter from 'lodash/filter';
-import find from 'lodash/find';
-
-import React, {Component} from 'react';
-import {Alert} from 'react-native';
+import React, {PureComponent} from 'react';
 import {
   ExpandableCalendar,
   TimelineEventProps,
   TimelineList,
   CalendarProvider,
   TimelineProps,
-  CalendarUtils
 } from 'react-native-calendars';
-import {Quarter, UCSBEvents} from "@/helpers/api";
-
-const EVENT_COLOR = '#e6add8';
-const today = new Date();
-const getDate = (offset = 0) => CalendarUtils.getCalendarDateString(new Date().setDate(today.getDate() + offset));
-
-const timelineEvents: TimelineEventProps[] = [
-  {
-    start: `${getDate(-1)} 09:20:00`,
-    end: `${getDate(-1)} 12:00:00`,
-    title: 'Merge Request to React Native Calendars',
-    summary: 'Merge Timeline Calendar to React Native Calendars'
-  },
-  {
-    start: `${getDate()} 01:15:00`,
-    end: `${getDate()} 02:30:00`,
-    title: 'Meeting A',
-    summary: 'Summary for meeting A',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate()} 01:30:00`,
-    end: `${getDate()} 02:30:00`,
-    title: 'Meeting B',
-    summary: 'Summary for meeting B',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate()} 01:45:00`,
-    end: `${getDate()} 02:45:00`,
-    title: 'Meeting C',
-    summary: 'Summary for meeting C',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate()} 02:40:00`,
-    end: `${getDate()} 03:10:00`,
-    title: 'Meeting D',
-    summary: 'Summary for meeting D',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate()} 02:50:00`,
-    end: `${getDate()} 03:20:00`,
-    title: 'Meeting E',
-    summary: 'Summary for meeting E',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate()} 04:30:00`,
-    end: `${getDate()} 05:30:00`,
-    title: 'Meeting F',
-    summary: 'Summary for meeting F',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate(1)} 00:30:00`,
-    end: `${getDate(1)} 01:30:00`,
-    title: 'Visit Grand Mother',
-    summary: 'Visit Grand Mother and bring some fruits.',
-    color: 'lightblue'
-  },
-  {
-    start: `${getDate(1)} 02:30:00`,
-    end: `${getDate(1)} 03:20:00`,
-    title: 'Meeting with Prof. Behjet Zuhaira',
-    summary: 'Meeting with Prof. Behjet at 130 in her office.',
-    color: EVENT_COLOR
-  },
-  {
-    start: `${getDate(1)} 04:10:00`,
-    end: `${getDate(1)} 04:40:00`,
-    title: 'Tea Time with Dr. Hasan',
-    summary: 'Tea Time with Dr. Hasan, Talk about Project'
-  },
-  {
-    start: `${getDate(1)} 01:05:00`,
-    end: `${getDate(1)} 01:35:00`,
-    title: 'Dr. Mariana Joseph',
-    summary: '3412 Piedmont Rd NE, GA 3032'
-  },
-  {
-    start: `${getDate(1)} 14:30:00`,
-    end: `${getDate(1)} 16:30:00`,
-    title: 'Meeting Some Friends in ARMED',
-    summary: 'Arsalan, Hasnaat, Talha, Waleed, Bilal',
-    color: 'pink'
-  },
-  {
-    start: `${getDate(2)} 01:40:00`,
-    end: `${getDate(2)} 02:25:00`,
-    title: 'Meet Sir Khurram Iqbal',
-    summary: 'Computer Science Dept. Comsats Islamabad',
-    color: 'orange'
-  },
-  {
-    start: `${getDate(2)} 04:10:00`,
-    end: `${getDate(2)} 04:40:00`,
-    title: 'Tea Time with Colleagues',
-    summary: 'WeRplay'
-  },
-  {
-    start: `${getDate(2)} 00:45:00`,
-    end: `${getDate(2)} 01:45:00`,
-    title: 'Lets Play Apex Legends',
-    summary: 'with Boys at Work'
-  },
-  {
-    start: `${getDate(2)} 11:30:00`,
-    end: `${getDate(2)} 12:30:00`,
-    title: 'Dr. Mariana Joseph',
-    summary: '3412 Piedmont Rd NE, GA 3032'
-  },
-  {
-    start: `${getDate(4)} 12:10:00`,
-    end: `${getDate(4)} 13:45:00`,
-    title: 'Merge Request to React Native Calendars',
-    summary: 'Merge Timeline Calendar to React Native Calendars'
-  }
-];
+import {Quarter, UCSBEvents, UCSBSession} from "@/helpers/api";
+import dayjs from 'dayjs';
+import createIcs from "@/helpers/create-ics";
 
 const INITIAL_TIME = {hour: 9, minutes: 0};
-const EVENTS: TimelineEventProps[] = timelineEvents;
+
+const letterToDay: Record<string, number> = {
+  U: 0,
+  M: 1,
+  T: 2,
+  W: 3,
+  R: 4,
+  F: 5,
+  S: 6
+};
 
 interface ScheduleProps {
   quarter: Quarter | null;
@@ -144,26 +30,139 @@ interface ScheduleProps {
 
 interface ScheduleState {
   currentDate: string;
-  events: TimelineEventProps[];
-  eventsByDate: Record<string, TimelineEventProps[]>;
+  UCSBEventsByDate: Record<string, TimelineEventProps[]>;
+  CanvasEventsByDate: Record<string, TimelineEventProps[]>
 }
 
-export default class Schedule extends Component<ScheduleProps, ScheduleState> {
-  state = {
-    currentDate: getDate(),
-    events: EVENTS,
-    eventsByDate: groupBy(EVENTS, e => CalendarUtils.getCalendarDateString(e.start)) as {
-      [key: string]: TimelineEventProps[];
-    }
+interface Marked {
+  marked: boolean;
+}
+
+export default class Schedule extends PureComponent<ScheduleProps, ScheduleState> {
+  state: ScheduleState = {
+    currentDate: dayjs().format("YYYY-MM-DD"),
+    UCSBEventsByDate: {},
+    CanvasEventsByDate: {}
   };
 
-  marked = {
-    [`${getDate(-1)}`]: {marked: true},
-    [`${getDate()}`]: {marked: true},
-    [`${getDate(1)}`]: {marked: true},
-    [`${getDate(2)}`]: {marked: true},
-    [`${getDate(4)}`]: {marked: true}
-  };
+  eventsByDate = new Proxy({} as Record<string, TimelineEventProps[]>, {
+    has: (target: Record<string, TimelineEventProps[]>, p: string): boolean => {
+      return target.hasOwnProperty(p) || this.state.UCSBEventsByDate.hasOwnProperty(p);
+    },
+    get: (target: Record<string, TimelineEventProps[]>, p: string, _receiver: any): TimelineEventProps[] | undefined => {
+      if (target.hasOwnProperty(p) || this.state.UCSBEventsByDate.hasOwnProperty(p)) {
+        return new Proxy([
+          ...target[p] ?? [],
+          ...this.state.UCSBEventsByDate[p] ?? []
+        ], {
+          get: (target1: TimelineEventProps[], p1: string | symbol | number, _receiver1: any): any => {
+            switch(p1) {
+              case "push":
+                return target[p].push.bind(target[p]);
+              default:
+                return target1[p1 as number];
+            }
+          }
+        });
+      } else {
+        return undefined;
+      }
+    },
+    set: (target: Record<string, TimelineEventProps[]>, p: string, newValue: TimelineEventProps[], _receiver: any): boolean => {
+      target[p] = newValue;
+      return true;
+    },
+    ownKeys: (target: Record<string, TimelineEventProps[]>): ArrayLike<string> => {
+      return [...Object.keys(target), ...Object.keys(this.state.UCSBEventsByDate)];
+    }
+  });
+
+  componentDidMount() {
+    this.processUCSBEvents();
+  }
+
+  componentDidUpdate(prevProps: ScheduleProps) {
+    if (prevProps.ucsbEvents !== this.props.ucsbEvents) {
+      this.processUCSBEvents();
+    }
+  }
+
+  processUCSBEvents() {
+    const { quarter, ucsbEvents } = this.props;
+    if (!quarter || !ucsbEvents) return;
+
+    this.setState({ UCSBEventsByDate: {} });
+
+    const UCSBSessionByDay: UCSBSession[][] = [[], [], [], [], [], [], []];
+
+    for (const course of ucsbEvents.courses) {
+      console.log("course hoho", course);
+      for (const session of course.sessions) {
+        console.log("session hoho", session);
+        for (const day of session.days) {
+          UCSBSessionByDay[letterToDay[day]].push(session);
+        }
+      }
+    }
+
+    console.log("UCSBSessionByDay", UCSBSessionByDay);
+
+    let end = dayjs(quarter.lastDayOfClasses);
+    end = end.date(end.date() + 1);
+
+    const UCSBEventsByDate: Record<string, TimelineEventProps[]> = {};
+
+    for (let date = dayjs(quarter.firstDayOfClasses); date.diff(end) < 0; date = date.date(date.date() + 1)) {
+      const dateString = date.format("YYYY-MM-DD");
+      UCSBEventsByDate[dateString] = UCSBSessionByDay[date.day()].map(session => ({
+        start: dayjs(`${dateString} ${session.start}`, "YYYY-MM-DD h:mm A").format("YYYY-MM-DD HH:mm:ss"),
+        end: dayjs(`${dateString} ${session.end}`, "YYYY-MM-DD h:mm A").format("YYYY-MM-DD HH:mm:ss"),
+        title: session.name,
+        summary: session.location,
+        color: "#edf3fe"
+      }));
+    }
+
+    for (const final of ucsbEvents.finals) {
+      UCSBEventsByDate[final.start.format("YYYY-MM-DD")] = [{
+        start: final.start.format("YYYY-MM-DD HH:mm:ss"),
+        end: final.end.format("YYYY-MM-DD HH:mm:ss"),
+        title: final.name,
+        summary: "",
+        color: "#2280bf"
+      }];
+    }
+
+    console.log("UCSBEventsByDate", UCSBEventsByDate);
+
+    this.setState({UCSBEventsByDate});
+
+    console.log(createIcs(quarter, ucsbEvents));
+  }
+
+  marked = new Proxy({} as Record<string, Marked>, {
+    has: (target: Record<string, Marked>, p: string): boolean => {
+      return target.hasOwnProperty(p) || this.eventsByDate.hasOwnProperty(p);
+    },
+    get: (target: Record<string, Marked>, p: string, _receiver: any): Marked | undefined => {
+      if (target.hasOwnProperty(p)) {
+        return target[p];
+      } else if (this.eventsByDate[p]?.length) {
+        return {
+          marked: true
+        };
+      } else {
+        return undefined;
+      }
+    },
+    set: (target: Record<string, Marked>, p: string, newValue: Marked, _receiver: any): boolean => {
+      target[p] = newValue;
+      return true;
+    },
+    ownKeys: (target: Record<string, Marked>): ArrayLike<string> => {
+      return [...Object.keys(target), ...Object.keys(this.eventsByDate)];
+    }
+  });
 
   onDateChanged = (date: string, source: string) => {
     console.log('TimelineCalendarScreen onDateChanged: ', date, source);
@@ -174,82 +173,18 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
     console.log('TimelineCalendarScreen onMonthChange: ', month, updateSource);
   };
 
-  createNewEvent: TimelineProps['onBackgroundLongPress'] = (timeString, timeObject) => {
-    const {eventsByDate} = this.state;
-    const hourString = `${(timeObject.hour + 1).toString().padStart(2, '0')}`;
-    const minutesString = `${timeObject.minutes.toString().padStart(2, '0')}`;
-
-    const newEvent = {
-      id: 'draft',
-      start: `${timeString}`,
-      end: `${timeObject.date} ${hourString}:${minutesString}:00`,
-      title: 'New Event',
-      color: 'white'
-    };
-
-    if (timeObject.date) {
-      if (eventsByDate[timeObject.date]) {
-        eventsByDate[timeObject.date] = [...eventsByDate[timeObject.date], newEvent];
-        this.setState({eventsByDate});
-      } else {
-        eventsByDate[timeObject.date] = [newEvent];
-        this.setState({eventsByDate: {...eventsByDate}});
-      }
-    }
-  };
-
-  approveNewEvent: TimelineProps['onBackgroundLongPressOut'] = (_timeString, timeObject) => {
-    const {eventsByDate} = this.state;
-
-    Alert.prompt('New Event', 'Enter event title', [
-      {
-        text: 'Cancel',
-        onPress: () => {
-          if (timeObject.date) {
-            eventsByDate[timeObject.date] = filter(eventsByDate[timeObject.date], e => e.id !== 'draft');
-
-            this.setState({
-              eventsByDate
-            });
-          }
-        }
-      },
-      {
-        text: 'Create',
-        onPress: eventTitle => {
-          if (timeObject.date) {
-            const draftEvent = find(eventsByDate[timeObject.date], {id: 'draft'});
-            if (draftEvent) {
-              draftEvent.id = undefined;
-              draftEvent.title = eventTitle ?? 'New Event';
-              draftEvent.color = 'lightgreen';
-              eventsByDate[timeObject.date] = [...eventsByDate[timeObject.date]];
-
-              this.setState({
-                eventsByDate
-              });
-            }
-          }
-        }
-      }
-    ]);
-  };
-
   private timelineProps: Partial<TimelineProps> = {
     format24h: true,
-    onBackgroundLongPress: this.createNewEvent,
-    onBackgroundLongPressOut: this.approveNewEvent,
-    // scrollToFirst: true,
-    // start: 0,
-    // end: 24,
     unavailableHours: [{start: 0, end: 6}, {start: 22, end: 24}],
     overlapEventsSpacing: 8,
     rightEdgeSpacing: 24,
   };
 
   render() {
-    const {quarter, canvasEvents, ucsbEvents} = this.props;
-    const {currentDate, eventsByDate} = this.state;
+    const { currentDate } = this.state;
+
+    console.log("Derived eventsByDate:", this.eventsByDate);
+
 
     return (
         <CalendarProvider
@@ -258,20 +193,18 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
             onMonthChange={this.onMonthChange}
             showTodayButton
             disabledOpacity={0.6}
-            // numberOfDays={3}
         >
           <ExpandableCalendar
-              firstDay={1}
+              firstDay={0}
               leftArrowImageSource={require('../img/previous.png')}
               rightArrowImageSource={require('../img/next.png')}
               markedDates={this.marked}
           />
           <TimelineList
-              events={eventsByDate}
+              events={this.eventsByDate}
               timelineProps={this.timelineProps}
               showNowIndicator
-              // scrollToNow
-              scrollToFirst
+              scrollToNow
               initialTime={INITIAL_TIME}
           />
         </CalendarProvider>

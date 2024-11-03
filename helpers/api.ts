@@ -1,4 +1,8 @@
 import {jsdom} from "jsdom-jscore-rn";
+import dayjs, {Dayjs} from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
 
 export interface Quarter {
   "quarter": string;
@@ -40,61 +44,120 @@ export async function getQuarter(): Promise<Quarter> {
   }
 }
 
+export interface UCSBSession {
+  name: string;
+  days: string[];
+  start: string;
+  end: string;
+  location: string;
+  url: string;
+  instructors: string[];
+}
 
-interface UCSBEvent {
-  start: string | undefined;
-  end: string | undefined;
-  content: string | undefined;
-  event: string | undefined;
+export interface UCSBCourse {
+  name: string;
+  sessions: UCSBSession[];
+}
+
+export interface UCSBFinal {
+  name: string;
+  start: Dayjs;
+  end: Dayjs;
 }
 
 export interface UCSBEvents {
-  M: UCSBEvent[];
-  T: UCSBEvent[];
-  W: UCSBEvent[];
-  R: UCSBEvent[];
-  F: UCSBEvent[];
-  S: UCSBEvent[];
-  U: UCSBEvent[];
+  courses: UCSBCourse[];
+  finals: UCSBFinal[];
 }
 
-type UCSBDay = "M" | "T" | "W" | "R" | "F" | "S" | "U";
-const UCSBDays: UCSBDay[] = ["M", "T", "W", "R", "F", "S", "U"];
+const UCSBFinalDatePattern = /\w+, (?<MMM>\w+) (?<D>\d+), (?<YYYY>\d+) (?<h1>\d+):(?<mm1>\d+) (?<A1>\w+) - (?<h2>\d+):(?<mm2>\d+) (?<A2>\w+)/;
 
 export async function getUCSBEvents(headers: HeadersInit): Promise<UCSBEvents> {
-  const response = await fetch("https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/WeeklyStudentSchedule.aspx", {
+  const response = await fetch("https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
     "method": "GET",
     "headers": headers
   });
+  const result: UCSBEvents = {
+    courses: [],
+    finals: []
+  };
   const dom = jsdom(await response.text());
-  console.log("Dom", dom.title);
-  const eventsElement = dom.querySelector('#pageContent_events');
-  if (eventsElement) {
-    const events: UCSBEvents = {
-      M: [],
-      T: [],
-      W: [],
-      R: [],
-      F: [],
-      S: [],
-      U: []
-    };
-    for (const day of UCSBDays) {
-      const eventGroup = eventsElement.querySelector(`#pageContent_eventsgroup${day}`);
-      if (eventGroup) {
-        const currentEvents = eventGroup.querySelectorAll('.single-event');
-        events[day] = Array.from(currentEvents).map((eventElement: Element) => ({
-          start: eventElement.attributes.getNamedItem('data-start')?.value,
-          end: eventElement.attributes.getNamedItem('data-end')?.value,
-          content: eventElement.attributes.getNamedItem('data-content')?.value,
-          event: eventElement.attributes.getNamedItem('data-event')?.value
-        }));
+  // console.log("Dom", dom.title);
+  const gridElement = dom.querySelector('#ctl00_pageContent_ScheduleGrid');
+  if (gridElement) {
+    const scheduleItemElements = gridElement.querySelectorAll('.scheduleItem:not(:last-child)');
+    for (const scheduleItem of Array.from(scheduleItemElements)) {
+      const course: UCSBCourse = {
+        name: scheduleItem.querySelector('.courseTitle > span')?.textContent?.replaceAll(/\s+/g, " ").trim() ?? "",
+        sessions: []
+      };
+      const sessionElements = scheduleItem.querySelectorAll('.session');
+      for (const sessionItem of Array.from(sessionElements)) {
+        const labelElements = sessionItem.querySelectorAll('label.visible-xs');
+        let days: string[] | null = null;
+        let start: string | null = null;
+        let end: string | null = null;
+        let location: string | null = null;
+        let url: string | null = null;
+        let instructors: string[] | null = null;
+        for (const labelElement of Array.from(labelElements)) {
+          const sibling = labelElement.nextSibling;
+          if (sibling) {
+            switch (labelElement.textContent) {
+              case "Days":
+                if (sibling.textContent) {
+                  days = sibling.textContent.trim().split(/\s+/g);
+                }
+                break;
+              case "Time":
+                if (sibling.textContent) {
+                  [start, end] = sibling.textContent.trim().split("-", 2);
+                }
+                break;
+              case "Location":
+                if (sibling.textContent) {
+                  location = sibling.textContent.trim();
+                  url = (sibling as HTMLAnchorElement).href;
+                }
+                break;
+              case "Instructor":
+                instructors = [];
+                for (let element: Element | null = sibling as Element; element; element = element.nextElementSibling) {
+                  if (element.nodeType === 3 && element.textContent) {
+                    const instructor = element.textContent.trim();
+                    if (instructor.length) {
+                      instructors.push(instructor);
+                    }
+                  }
+                }
+            }
+          }
+        }
+        if (days && start && end && location && url && instructors) {
+          course.sessions.push({
+            name: course.name, days, start, end, location, url, instructors
+          });
+        }
+      }
+      result.courses.push(course);
+    }
+  }
+  const finalElements = dom.querySelectorAll('.finalBlock:not(:last-child)');
+  for (const element of Array.from(finalElements)) {
+    const [nameElement, timeElement] = Array.from(element.querySelectorAll('div'));
+    if (nameElement.textContent) {
+      const match = timeElement.textContent?.match(UCSBFinalDatePattern);
+      if (match?.groups) {
+        const {MMM, D, YYYY, h1, mm1, A1, h2, mm2, A2} = match.groups;
+        result.finals.push({
+          name: nameElement.textContent.replaceAll(/\s+/g, " ").trim(),
+          start: dayjs(`${MMM} ${D}, ${YYYY} ${h1}:${mm1} ${A1}`, "MMM D, YYYY h:mm A"),
+          end: dayjs(`${MMM} ${D}, ${YYYY} ${h2}:${mm2} ${A2}`, "MMM D, YYYY h:mm A")
+        });
       }
     }
-    return events;
-  } else {
-    throw new Error("Failed to get events element");
   }
+  return result;
 }
 
 type CanvasEvents = object;
