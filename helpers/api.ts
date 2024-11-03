@@ -1,8 +1,8 @@
-import { jsdom } from "jsdom-jscore-rn";
-import "core-js/actual/url";
-import "core-js/actual/url-search-params";
+import {jsdom} from "jsdom-jscore-rn";
 import dayjs, {Dayjs} from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import "core-js/actual/url";
+import "core-js/actual/url-search-params";
 
 dayjs.extend(customParseFormat);
 

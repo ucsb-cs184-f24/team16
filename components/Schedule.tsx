@@ -36,7 +36,7 @@ interface ScheduleProps {
 interface ScheduleState {
   currentDate: string;
   UCSBEventsByDate: Record<string, TimelineEventProps[]>;
-  canvasEventsByDate: Record<string, TimelineEventProps[]>
+  CanvasEventsByDate: Record<string, TimelineEventProps[]>;
 }
 
 interface Marked {
@@ -47,7 +47,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
   state: ScheduleState = {
     currentDate: dayjs().format("YYYY-MM-DD"),
     UCSBEventsByDate: {},
-    canvasEventsByDate: {}
+    CanvasEventsByDate: {}
   };
 
   eventsByDate = new Proxy({} as Record<string, TimelineEventProps[]>, {
