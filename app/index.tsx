@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Icon } from 'native-base';
 import Schedule from '@/components/Schedule';
+
 import { useCanvasAuth } from '@/app/canvas-auth';
 import { useUCSBAuth } from "@/app/ucsb-auth";
 import {
@@ -19,6 +20,8 @@ import { useEffect, useRef, useState } from "react";
 import { Mutex } from "async-mutex";
 import {router} from "expo-router"
 import {quarter_screen} from "./quarter-screen"
+
+
 
 export default function Index() {
   const [quarter, setQuarter] = useState<Quarter | null>(null);
@@ -113,13 +116,17 @@ export default function Index() {
       style={styles.container} >
 
         <Button
-        title="Check My Quarter"
-      onPress={() => router.navigate('quarter-screen')}
-    />
-      <Schedule
-        quarter={quarter}
-        canvasEvents={canvasEvents}
-        ucsbEvents={ucsbEvents}
+
+          title="Check My Quarter"
+          onPress={() => router.push(
+            `/quarter-screen?name=${encodeURIComponent(JSON.stringify(canvasEvents.short_name))}`
+          )}
+        />
+      
+        <Schedule
+                    quarter={quarter}
+                    canvasEvents={canvasEvents}
+                    ucsbEvents={UCSBEvents}
                 />
 
     </View>
