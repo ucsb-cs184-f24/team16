@@ -8,7 +8,6 @@ import {
 } from 'react-native-calendars';
 import {Quarter, UCSBEvents, UCSBSession} from "@/helpers/api";
 import dayjs from 'dayjs';
-import createIcs from "@/helpers/create-ics";
 
 const INITIAL_TIME = {hour: 9, minutes: 0};
 
@@ -136,8 +135,6 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
     console.log("UCSBEventsByDate", UCSBEventsByDate);
 
     this.setState({UCSBEventsByDate});
-
-    console.log(createIcs(quarter, ucsbEvents));
   }
 
   marked = new Proxy({} as Record<string, Marked>, {
