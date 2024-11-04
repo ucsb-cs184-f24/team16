@@ -45,20 +45,19 @@ jobs:
         run: npm install
 
       - name: Build Android
-        run: ANDROID_HOME=$ANDROID_SDK_ROOT eas build --platform android --profile production --local --non-interactive
-
-      - name: Rename .apk File
-        id: rename-apk-file
-        run: |
-          APK_FILE=team16-${{ steps.get-app-version.outputs.version }}.apk
-          echo "apk-file=$APK_FILE" >> $GITHUB_OUTPUT
-          mv build-*.apk $APK_FILE
+        run: >
+          ANDROID_HOME=$ANDROID_SDK_ROOT eas build
+          --platform android
+          --profile production-apk
+          --local
+          --non-interactive
+          --output ./team16-${{ steps.get-app-version.outputs.version }}.apk
 
       - name: Upload .apk File
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.rename-apk-file.outputs.apk-file }}
-          path: ./${{ steps.rename-apk-file.outputs.apk-file }}
+          name: team16-${{ steps.get-app-version.outputs.version }}.apk
+          path: ./team16-${{ steps.get-app-version.outputs.version }}.apk
 
   create-ipa:
     name: Create .ipa File
@@ -122,20 +121,19 @@ jobs:
         run: npm install
 
       - name: Build iOS
-        run: eas build --platform ios --profile production --local --non-interactive
-
-      - name: Rename .ipa File
-        id: rename-ipa-file
-        run: |
-          IPA_FILE=team16-${{ steps.get-app-version.outputs.version }}.ipa
-          echo "ipa-file=$IPA_FILE" >> $GITHUB_OUTPUT
-          mv build-*.ipa $IPA_FILE
+        run: >
+          eas build
+          --platform ios
+          --profile production
+          --local
+          --non-interactive
+          --output ./team16-${{ steps.get-app-version.outputs.version }}.ipa
 
       - name: Upload .ipa File
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.rename-ipa-file.outputs.ipa-file }}
-          path: ./${{ steps.rename-ipa-file.outputs.ipa-file }}
+          name: team16-${{ steps.get-app-version.outputs.version }}.ipa
+          path: ./team16-${{ steps.get-app-version.outputs.version }}.ipa
 
       - name: Clean up keychain and provisioning profile
         if: always()
