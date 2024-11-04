@@ -12,6 +12,7 @@ import {router} from "expo-router"
 import {quarter_screen} from "./quarter-screen"
 
 
+
 export default function Index() {
   const [quarter, setQuarter] = useState<Quarter | null>(null);
   const quarterSuccessRef = useRef<boolean>(false);
@@ -80,11 +81,13 @@ export default function Index() {
       <View style={styles.container} >
 
         <Button
+
           title="Check My Quarter"
           onPress={() => router.push(
             `/quarter-screen?name=${encodeURIComponent(JSON.stringify(canvasEvents.short_name))}`
           )}
         />
+      
         <Schedule
                     quarter={quarter}
                     canvasEvents={canvasEvents}

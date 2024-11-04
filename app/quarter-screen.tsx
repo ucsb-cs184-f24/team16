@@ -13,6 +13,7 @@ type QuarterState = {
 }
 
 const parseQuarterData = (data: Record<string, any>, name: string): QuarterState => {
+
   const currentDate = new Date();
 
   const firstDayOfClasses = new Date(data.firstDayOfClasses);
@@ -27,6 +28,7 @@ const parseQuarterData = (data: Record<string, any>, name: string): QuarterState
   let classState: string = "Not in Class";
   let passState: string = "No pass info";
   let uname: string = JSON.parse(name);
+
 
   if (currentDate >= firstDayOfClasses && currentDate <= lastDayOfClasses) {
     classState = "Taking Class";
