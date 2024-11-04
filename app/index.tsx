@@ -6,6 +6,8 @@ import Schedule from '@/components/Schedule';
 import { useCanvasAuth } from '@/app/canvas-auth';
 import { useUCSBAuth } from "@/app/ucsb-auth";
 import {
+  CanvasEvent,
+  CanvasAssignment,
   getCanvasAssignments,
   getCanvasEvents,
   getQuarter,
@@ -41,37 +43,42 @@ export default function Index() {
     release();
   });
 
-  const [canvasEvents, setCanvasEvents] = useState<any | null>(null);
+  const [canvasEvents, setCanvasEvents] = useState<CanvasEvent[] | null>(null);
   const [canvasHeaders, setCanvasHeaders] = useState<HeadersInit | null>(null);
 
   useCanvasAuth("/", async headers => {
     setCanvasHeaders(headers);
-    try {
-      const canvasUser = await getCanvasEvents(headers);
-      console.log("Canvas API Result:", canvasUser);
-    } catch (e) {
-      console.error(e);
+    if (quarter) {
+      try {
+        const assignments = await getCanvasAssignments(canvasHeaders, quarter);
+        console.log("Canvas Assignments:", assignments);
+        setCanvasEvents(assignments);
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    } else {
       return false;
     }
   });
 
-  useEffect(() => {
-    if (quarter && canvasHeaders) {
-      (async () => {
-        try {
-          const assignments = await getCanvasAssignments(canvasHeaders, quarter);
-          console.log("Canvas Assignments:", assignments);
-          setCanvasEvents(assignments);
-        } catch (e) {
-          console.error('Error fetching Canvas assignments:', e);
-        }
-      })();
-    } else {
-      if (!quarter) {
-        console.error("Quarter data not available yet.");
-      }
-    }
-  }, [quarter, canvasHeaders]);
+//   useEffect(() => {
+//     if (quarter && canvasHeaders) {
+//       (async () => {
+//         try {
+//           const assignments = await getCanvasAssignments(canvasHeaders, quarter);
+//           console.log("Canvas Assignments:", assignments);
+//           setCanvasEvents(assignments);
+//         } catch (e) {
+//           console.error('Error fetching Canvas assignments:', e);
+//         }
+//       })();
+//     } else {
+//       if (!quarter) {
+//         console.error("Quarter data not available yet.");
+//       }
+//     }
+//   }, [quarter, canvasHeaders]);
 
   const [ucsbEvents, setUCSBEvents] = useState<UCSBEvents | null>(null);
   useUCSBAuth("/", async headers => {

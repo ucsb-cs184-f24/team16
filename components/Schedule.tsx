@@ -1,4 +1,10 @@
+import groupBy from 'lodash/groupBy';
+import filter from 'lodash/filter';
+import find from 'lodash/find';
+import {CanvasEvent} from "@/helpers/api";
+
 import React, {PureComponent} from 'react';
+import {Alert} from 'react-native';
 import {
   ExpandableCalendar,
   TimelineEventProps,
@@ -23,7 +29,7 @@ const letterToDay: Record<string, number> = {
 
 interface ScheduleProps {
   quarter: Quarter | null;
-  canvasEvents: object | null; // TODO: Define a type
+  canvasEvents: CanvasEvent[] | null;
   ucsbEvents: UCSBEvents | null;
 }
 
