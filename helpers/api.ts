@@ -169,3 +169,56 @@ export async function getCanvasEvents(headers: HeadersInit): Promise<CanvasEvent
   });
   return response.json();
 }
+
+export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarter): Promise<any> {
+  const startDate = quarter.firstDayOfQuarter;
+  const endDate = quarter.lastDayOfSchedule;
+
+  const coursesResponse = await fetch("https://ucsb.instructure.com/api/v1/courses", {
+    method: "GET",
+    headers: headers,
+  });
+
+  //console.log('Fetching courses with headers:', headers);
+  console.log('Courses Response Status:', coursesResponse.status);
+
+  if (!coursesResponse.ok) {
+    const errorText = await coursesResponse.text();
+    console.error("Failed to fetch courses:", errorText);
+    throw new Error("Failed to fetch courses");
+  }
+
+  const courses = await coursesResponse.json();
+  console.log('Fetched courses:', courses);
+
+  const eventsPromises = courses.map(async (course: any) => {
+    const courseId = course.id;
+
+    const calendarEventsResponse = await fetch(
+      `https://ucsb.instructure.com/api/v1/calendar_events?type=assignment&start_date=${startDate}&end_date=${endDate}&context_codes[]=course_${courseId}`,
+      {
+        method: "GET",
+        headers: headers,
+      }
+    );
+
+    console.log(`Fetching calendar events for course ${courseId}`);
+    //console.log(`Fetching calendar events for course ${courseId} with URL:`, calendarEventsResponse.url);
+    console.log('Calendar Events Response Status:', calendarEventsResponse.status);
+
+    if (!calendarEventsResponse.ok) {
+      const errorText = await calendarEventsResponse.text();
+      console.error(`Failed to fetch calendar events for course ${courseId}:`, errorText);
+      throw new Error(`Failed to fetch calendar events for course ${courseId}`);
+    }
+
+    const events = await calendarEventsResponse.json();
+    console.log(`Events for course ${courseId}:`, events);
+    return { courseId, events };
+  });
+
+  const eventsByCourse = await Promise.all(eventsPromises);
+
+  return eventsByCourse;
+}
+
