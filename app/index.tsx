@@ -1,13 +1,23 @@
-import {View, Button, TouchableOpacity, StyleSheet} from 'react-native';
+import { View , Button, TouchableOpacity, StyleSheet} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Icon } from 'native-base';
 import Schedule from '@/components/Schedule';
-import {useCanvasAuth, CanvasAuthType} from '@/app/canvas-auth';
-import {useUCSBAuth} from "@/app/ucsb-auth";
-import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
-import {useRef, useState} from "react";
-import {Mutex} from "async-mutex";
+
+import { useCanvasAuth } from '@/app/canvas-auth';
+import { useUCSBAuth } from "@/app/ucsb-auth";
+import {
+  CanvasEvent,
+  CanvasAssignment,
+  getCanvasAssignments,
+  getCanvasEvents,
+  getQuarter,
+  getUCSBEvents,
+  Quarter,
+  UCSBEvents,
+} from '@/helpers/api';
+import { useEffect, useRef, useState } from "react";
+import { Mutex } from "async-mutex";
 import {router} from "expo-router"
 import {quarter_screen} from "./quarter-screen"
 
@@ -23,10 +33,10 @@ export default function Index() {
   quarterMutexRef.current.acquire().then(async release => {
     if (!quarterSuccessRef.current) {
       try {
-        const quarter = await getQuarter();
-        console.log("Quarter API Result:", quarter);
-        if (quarter) {
-          setQuarter(quarter);
+        const quarterData = await getQuarter();
+        console.log("Quarter API Result:", quarterData);
+        if (quarterData) {
+          setQuarter(quarterData);
           quarterSuccessRef.current = true;
         }
       } catch (e) {
@@ -36,38 +46,62 @@ export default function Index() {
     release();
   });
 
-  // TODO: Define type for canvasEvents
-  const [canvasEvents, setCanvasEvents] = useState<object | null>(null);
+  const [canvasEvents, setCanvasEvents] = useState<CanvasEvent[] | null>(null);
+  const [canvasHeaders, setCanvasHeaders] = useState<HeadersInit | null>(null);
+
   useCanvasAuth("/", async headers => {
-    try {
-      const canvasEvents = await getCanvasEvents(headers);
-      console.log("Canvas API Result:", canvasEvents);
-      setCanvasEvents(canvasEvents);
-    } catch (e) {
-      console.error(e);
+//     setCanvasHeaders(headers);
+    if (quarter) {
+      try {
+        const assignments = await getCanvasAssignments(headers, quarter);
+        console.log("Canvas Assignments:", assignments);
+        setCanvasEvents(assignments);
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    } else {
       return false;
     }
   });
 
-  const [UCSBEvents, setUCSBEvents] = useState<UCSBEvents | null>(null);
+//   useEffect(() => {
+//     if (quarter && canvasHeaders) {
+//       (async () => {
+//         try {
+//           const assignments = await getCanvasAssignments(canvasHeaders, quarter);
+//           console.log("Canvas Assignments:", assignments);
+//           setCanvasEvents(assignments);
+//         } catch (e) {
+//           console.error('Error fetching Canvas assignments:', e);
+//         }
+//       })();
+//     } else {
+//       if (!quarter) {
+//         console.error("Quarter data not available yet.");
+//       }
+//     }
+//   }, [quarter, canvasHeaders]);
+
+  const [ucsbEvents, setUCSBEvents] = useState<UCSBEvents | null>(null);
   useUCSBAuth("/", async headers => {
     try {
-      const UCSBEvents = await getUCSBEvents(headers);
-      console.log("UCSB API Result:", UCSBEvents);
-      setUCSBEvents(UCSBEvents);
+      const events = await getUCSBEvents(headers);
+      console.log("UCSB API Result:", events);
+      setUCSBEvents(events);
     } catch (e) {
       console.error(e);
       return false;
     }
   });
 
-  getQuarter().then(result => {
-    console.log("API Result:", result)
-    Alert.alert("API Result:", JSON.stringify(result, null, 2));
-  }, error => {
-    Alert.alert("Error", error.message);
-    console.log("Error", error.message);
-  });
+//   getQuarter().then(result => {
+//     console.log("API Result:", result)
+//     Alert.alert("API Result:", JSON.stringify(result, null, 2));
+//   }, error => {
+//     Alert.alert("Error", error.message);
+//     console.log("Error", error.message);
+//   });
 //   try {
 //         const result = await getQuarter();
 //             console.log("API Result:", result)
@@ -78,7 +112,8 @@ export default function Index() {
 //   }
 
   return (
-      <View style={styles.container} >
+    <View
+      style={styles.container} >
 
         <Button
 
@@ -94,7 +129,7 @@ export default function Index() {
                     ucsbEvents={UCSBEvents}
                 />
 
-      </View>
+    </View>
   );
 }
 
