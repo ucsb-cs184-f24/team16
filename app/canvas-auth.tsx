@@ -16,3 +16,7 @@ export const [CanvasAuth, useCanvasAuth] = generateAuth(
 );
 
 export default CanvasAuth;
+
+export interface CanvasAuthType {
+    name: string;
+}
