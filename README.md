@@ -18,7 +18,7 @@ Maybe allow creating custom events in the calendar or export the calendar.
 
 # Installing
 
-Go to Releases and download the `.apk` or `.ipa` file.
+Go to [Releases](https://github.com/ucsb-cs184-f24/team16/releases) and download the `.apk` or `.ipa` file.
 
 ## Android
 
