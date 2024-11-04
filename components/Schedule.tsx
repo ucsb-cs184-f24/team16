@@ -121,11 +121,17 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
     for (const course of canvasEvents) {
       for (const event of course.events) {
         console.log("Canvas event", event);
-        const start = dayjs(event.start_at);
-        const end = dayjs(event.end_at);
+        let start = dayjs(event.start_at);
+        let end = dayjs(event.end_at);
         const dateString = start.format("YYYY-MM-DD");
         if (!canvasEventsByDate[dateString]) {
           canvasEventsByDate[dateString] = [];
+        }
+
+    //test
+        if (start.hour() === 23 && start.minute() === 59) {
+          start = start.hour(0).minute(0);
+          end = start.hour(1).minute(0);
         }
         canvasEventsByDate[dateString].push({
           start: start.format("YYYY-MM-DD HH:mm:ss"),
