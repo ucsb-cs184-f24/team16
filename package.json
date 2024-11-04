@@ -21,6 +21,7 @@
     "@react-navigation/drawer": "^6.7.2",
     "@react-navigation/native": "^6.1.18",
     "async-mutex": "^0.5.0",
+    "core-js": "^3.39.0",
     "dayjs": "^1.11.13",
     "expo": "^51.0.37",
     "expo-constants": "~16.0.2",
