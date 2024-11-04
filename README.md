@@ -15,3 +15,17 @@ React Native (iOS and Android)
 
 Students would be able to view their calendar in the app.
 Maybe allow creating custom events in the calendar or export the calendar.
+
+# Installing
+
+Go to Releases and download the `.apk` or `.ipa` file.
+
+## Android
+
+Open the `.apk` file on the device and install it.
+
+## iOS
+
+Sideload the `.ipa` file using a tool like Sideloadly or Altstore.
+
+
