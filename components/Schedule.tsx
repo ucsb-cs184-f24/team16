@@ -195,8 +195,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
 
     console.log("UCSBEventsByDate", UCSBEventsByDate);
 
-//     this.setState({UCSBEventsByDate});
-    return UCSBEventsByDate;
+    this.setState({UCSBEventsByDate});
   }
 
   marked = new Proxy({} as Record<string, Marked>, {
