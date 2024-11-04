@@ -45,7 +45,7 @@ jobs:
         run: npm install
 
       - name: Build Android
-        run: ANDROID_HOME=$ANDROID_SDK_ROOT eas build --platform android --profile development --local --non-interactive
+        run: ANDROID_HOME=$ANDROID_SDK_ROOT eas build --platform android --profile production --local --non-interactive
 
       - name: Rename .apk File
         id: rename-apk-file
@@ -122,7 +122,7 @@ jobs:
         run: npm install
 
       - name: Build iOS
-        run: eas build --platform ios --profile development --local --non-interactive
+        run: eas build --platform ios --profile production --local --non-interactive
 
       - name: Rename .ipa File
         id: rename-ipa-file
