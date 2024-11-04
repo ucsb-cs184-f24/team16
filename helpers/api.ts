@@ -358,7 +358,7 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
   });
 
   const eventsByCourse = await Promise.all(eventsPromises);
-  console.log("Canvas Assignments:", JSON.stringify(eventsByCourse, null, 2));
+  //console.log("Canvas Assignments:", JSON.stringify(eventsByCourse, null, 2));
 
   return eventsByCourse;
 }
