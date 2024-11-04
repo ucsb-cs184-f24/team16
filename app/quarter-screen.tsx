@@ -2,18 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet , FlatList, Alert} from 'react-native';
 import {Index} from './index'
 import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
-import { useLocalSearchParams } from 'expo-router';
 
 type QuarterState = {
-    Name: string;
     Year: string;
     Category: string;
     ClassState: string;
     PassState: string;
 }
 
-const parseQuarterData = (data: Record<string, any>, name: string): QuarterState => {
-
+const parseQuarterData = (data: Record<string, any>): QuarterState => {
   const currentDate = new Date();
 
   const firstDayOfClasses = new Date(data.firstDayOfClasses);
@@ -26,9 +23,7 @@ const parseQuarterData = (data: Record<string, any>, name: string): QuarterState
   const lastDay2Add = new Date(data.lastDayToAddUnderGrad);
 
   let classState: string = "Not in Class";
-  let passState: string = "No pass info";
-  let uname: string = JSON.parse(name);
-
+  let passState: string = "No pass info"
 
   if (currentDate >= firstDayOfClasses && currentDate <= lastDayOfClasses) {
     classState = "Taking Class";
@@ -47,27 +42,22 @@ const parseQuarterData = (data: Record<string, any>, name: string): QuarterState
   }
 
   return {
-    Name: uname,
     Year: data.academicYear,
     Category: data.category,
     ClassState: classState,
-    PassState: passState,
+    PassState: passState
   };
 };
 
 const quarter_screen: React.FC = () => {
 
-    const { name } = useLocalSearchParams();
-    const decodedName = name ? JSON.parse(decodeURIComponent(name)) : null;
-
     const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
-    const [canvasEvents, setCanvasEvents] = useState<object | null>(null);
 
       useEffect(() => {
-        const fetchQuarterData = async () => {
+        const fetchData = async () => {
           try {
             const result = await getQuarter();
-            const parsedData = parseQuarterData(result, name);
+            const parsedData = parseQuarterData(result);
             setQuarterState(parsedData);
           } catch (error) {
             console.error(error);
@@ -75,7 +65,7 @@ const quarter_screen: React.FC = () => {
           }
         };
 
-        fetchQuarterData();
+        fetchData();
       }, []);
 
       if (!quarterState) {
