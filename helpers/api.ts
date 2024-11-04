@@ -267,8 +267,8 @@ interface CanvasAssignment {
 }
 
 export interface CanvasEvent {
-  courseId: string;
-  events: CanvasAssignment;
+  courseId: number;
+  events: CanvasAssignment[];
 }
 
 export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarter): Promise<CanvasEvent[]> {
@@ -333,7 +333,7 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
   }
 
   // Proceed with fetching events for current courses
-  const eventsPromises = currentCourses.map<PromiseLike<CanvasEvent>>(async (course: CanvasCourse[]) => {
+  const eventsPromises = currentCourses.map<PromiseLike<CanvasEvent>>(async (course: CanvasCourse, _index, _array): Promise<CanvasEvent> => {
     const courseId = course.id;
 
     const url = new URL("https://ucsb.instructure.com/api/v1/calendar_events");

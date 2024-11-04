@@ -36,7 +36,7 @@ interface ScheduleProps {
 interface ScheduleState {
   currentDate: string;
   UCSBEventsByDate: Record<string, TimelineEventProps[]>;
-  CanvasEventsByDate: Record<string, TimelineEventProps[]>;
+  canvasEventsByDate: Record<string, TimelineEventProps[]>;
 }
 
 interface Marked {
@@ -47,7 +47,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
   state: ScheduleState = {
     currentDate: dayjs().format("YYYY-MM-DD"),
     UCSBEventsByDate: {},
-    CanvasEventsByDate: {}
+    canvasEventsByDate: {}
   };
 
   eventsByDate = new Proxy({} as Record<string, TimelineEventProps[]>, {
@@ -104,7 +104,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
       this.state.UCSBEventsByDate = this.processUCSBEvents();
       updated = true;
     }
-    if (prevProps.canvasEvents != this.state.canvasEvents) {
+    if (prevProps.canvasEvents !== this.props.canvasEvents) {
       this.state.canvasEventsByDate = this.processCanvasEvents();
       updated = true;
     }
@@ -115,7 +115,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
 
   processCanvasEvents(): Record<string, TimelineEventProps[]> {
     const {canvasEvents} = this.props;
-    if (!canvasEvents) return;
+    if (!canvasEvents) return {};
     // this.setState({ canvasEventsByDate: {} });
     const canvasEventsByDate: Record<string, TimelineEventProps[]> = {};
     for (const course of canvasEvents) {
@@ -149,7 +149,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
 
   processUCSBEvents(): Record<string, TimelineEventProps[]> {
     const { quarter, ucsbEvents } = this.props;
-    if (!quarter || !ucsbEvents) return;
+    if (!quarter || !ucsbEvents) return {};
 
     // this.setState({ UCSBEventsByDate: {} });
 
@@ -195,7 +195,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
 
     console.log("UCSBEventsByDate", UCSBEventsByDate);
 
-    this.setState({UCSBEventsByDate});
+     return UCSBEventsByDate;
   }
 
   marked = new Proxy({} as Record<string, Marked>, {
