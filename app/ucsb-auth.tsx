@@ -1,4 +1,5 @@
 import generateAuth from "@/helpers/auth";
+import {jsdom} from "jsdom-jscore-rn";
 
 export const [UCSBAuth, useUCSBAuth] = generateAuth(
     "/ucsb-auth",
@@ -14,8 +15,7 @@ export const [UCSBAuth, useUCSBAuth] = generateAuth(
         "cookie": cookie,
       })
     }),
-    response => response.status === 200
-        && response.url === "https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/Home.aspx"
+    async response => response.status === 200 && !jsdom(await response.text()).title.startsWith("Log In")
 );
 
 export default UCSBAuth;
