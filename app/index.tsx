@@ -47,10 +47,10 @@ export default function Index() {
   const [canvasHeaders, setCanvasHeaders] = useState<HeadersInit | null>(null);
 
   useCanvasAuth("/", async headers => {
-    setCanvasHeaders(headers);
+//     setCanvasHeaders(headers);
     if (quarter) {
       try {
-        const assignments = await getCanvasAssignments(canvasHeaders, quarter);
+        const assignments = await getCanvasAssignments(headers, quarter);
         console.log("Canvas Assignments:", assignments);
         setCanvasEvents(assignments);
       } catch (e) {
@@ -92,13 +92,13 @@ export default function Index() {
     }
   });
 
-  getQuarter().then(result => {
-    console.log("API Result:", result)
-    Alert.alert("API Result:", JSON.stringify(result, null, 2));
-  }, error => {
-    Alert.alert("Error", error.message);
-    console.log("Error", error.message);
-  });
+//   getQuarter().then(result => {
+//     console.log("API Result:", result)
+//     Alert.alert("API Result:", JSON.stringify(result, null, 2));
+//   }, error => {
+//     Alert.alert("Error", error.message);
+//     console.log("Error", error.message);
+//   });
 //   try {
 //         const result = await getQuarter();
 //             console.log("API Result:", result)

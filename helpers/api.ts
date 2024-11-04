@@ -279,6 +279,8 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
   coursesUrl.searchParams.append('enrollment_state', 'active');
   coursesUrl.searchParams.append('include[]', 'term');
 
+  console.log("coursesUrl.href", coursesUrl.href);
+  console.log("headers", headers);
   const coursesResponse = await fetch(coursesUrl.href, {
     method: "GET",
     headers: headers,
@@ -356,6 +358,7 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
   });
 
   const eventsByCourse = await Promise.all(eventsPromises);
+  console.log("Canvas Assignments:", JSON.stringify(eventsByCourse, null, 2));
 
   return eventsByCourse;
 }
