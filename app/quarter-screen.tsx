@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet , FlatList, Alert} from 'react-native';
-import {Index} from './index'
-import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
+import React, {useEffect, useState} from 'react';
+import {Alert, FlatList, StyleSheet, Text, View} from 'react-native';
+import {getQuarter} from '@/helpers/api';
 
 type QuarterState = {
-    Year: string;
-    Category: string;
-    ClassState: string;
-    PassState: string;
+  Year: string;
+  Category: string;
+  ClassState: string;
+  PassState: string;
 }
 
 const parseQuarterData = (data: Record<string, any>): QuarterState => {
@@ -31,14 +30,14 @@ const parseQuarterData = (data: Record<string, any>): QuarterState => {
     classState = "Taking Finals";
   }
 
-  if (currentDate >= pass1Begin && currentDate <= pass2Begin){
-      passState = "You are at Pass 1";
-  }else if(currentDate >= pass2Begin && currentDate <= pass3Begin){
-      passState = "You are at Pass 2";
-  }else if(currentDate >= pass3Begin && currentDate <= lastDay2Add){
-      passState = "You are at Pass 3";
-  }else{
-      passState = "You are not in any passes";
+  if (currentDate >= pass1Begin && currentDate <= pass2Begin) {
+    passState = "You are at Pass 1";
+  } else if (currentDate >= pass2Begin && currentDate <= pass3Begin) {
+    passState = "You are at Pass 2";
+  } else if (currentDate >= pass3Begin && currentDate <= lastDay2Add) {
+    passState = "You are at Pass 3";
+  } else {
+    passState = "You are not in any passes";
   }
 
   return {
@@ -49,49 +48,47 @@ const parseQuarterData = (data: Record<string, any>): QuarterState => {
   };
 };
 
-const quarter_screen: React.FC = () => {
+export default function QuarterScreen() {
 
-    const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
+  const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
 
-      useEffect(() => {
-        const fetchData = async () => {
-          try {
-            const result = await getQuarter();
-            const parsedData = parseQuarterData(result);
-            setQuarterState(parsedData);
-          } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "Failed to fetch quarter data.");
-          }
-        };
-
-        fetchData();
-      }, []);
-
-      if (!quarterState) {
-        return (
-          <View style={styles.container}>
-            <Text style={styles.loadingText}>Loading...</Text>
-          </View>
-        );
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getQuarter();
+        const parsedData = parseQuarterData(result);
+        setQuarterState(parsedData);
+      } catch (error) {
+        console.error(error);
+        Alert.alert("Error", "Failed to fetch quarter data.");
       }
+    })();
+  }, []);
 
-      return (
+  if (!quarterState) {
+    return (
         <View style={styles.container}>
-          <Text style={styles.title}>Quarter Information</Text>
-          <FlatList
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+    );
+  }
+
+  return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Quarter Information</Text>
+        <FlatList
             data={Object.entries(quarterState)}
             keyExtractor={item => item[0]}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Text style={styles.cellTitle}>{item[0]}</Text>
-                <Text style={styles.cellValue}>{item[1]}</Text>
-              </View>
+            renderItem={({item}) => (
+                <View style={styles.row}>
+                  <Text style={styles.cellTitle}>{item[0]}</Text>
+                  <Text style={styles.cellValue}>{item[1]}</Text>
+                </View>
             )}
             contentContainerStyle={styles.listContent}
-          />
-        </View>
-      );
+        />
+      </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -148,5 +145,3 @@ const styles = StyleSheet.create({
     textAlign: 'right', // Align values to the right
   },
 });
-
-export default quarter_screen;
