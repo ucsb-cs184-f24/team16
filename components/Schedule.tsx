@@ -81,11 +81,10 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
       return true;
     },
     ownKeys: (target: Record<string, TimelineEventProps[]>): ArrayLike<string> => {
-      return [...new Set([
-        ...Object.keys(target),
-        ...this.UCSBEventsByDate ? Object.keys(this.UCSBEventsByDate) : [],
-        ...this.canvasEventsByDate ? Object.keys(this.canvasEventsByDate) : []
-      ])];
+      return Array.from(new Set(Object.keys(target).concat(
+        this.UCSBEventsByDate ? Object.keys(this.UCSBEventsByDate) : [],
+        this.canvasEventsByDate ? Object.keys(this.canvasEventsByDate) : []
+      )));
     }
   });
 
@@ -208,7 +207,7 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
       return true;
     },
     ownKeys: (target: Record<string, Marked>): ArrayLike<string> => {
-      return [...Object.keys(target), ...Object.keys(this.eventsByDate)];
+      return Array.from(new Set(Object.keys(target).concat(Object.keys(this.eventsByDate))));
     }
   });
 
