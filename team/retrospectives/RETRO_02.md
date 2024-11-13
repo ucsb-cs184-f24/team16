@@ -13,7 +13,7 @@
 * a change: Sending more messages in groupchat to ask questions or update progress when not in class; respond to others if we can 
 * a measurement: We can see each other's messages in slack channel or group chat
   
-* a goal: Implement some features like sign in/out bottom.
+* a goal: Implement some features like sign in/out button.
 * a change: Spend more time on project
 * a measurement: Use merge count and active work hours to track achievement.
 
@@ -35,5 +35,9 @@
 5. Continue working with Kanban Board
 
 ## Experiment/Change
-Updated 
+
+Updated 11/13
+* We organized our Kanban board and discussed new features we want to implement such as the login method modification
+* We believe the second retro was successful because as it helped us save time and become more efficient in working since we added more communication and made our code base to be cleaner. 
+* We will keep the change.
 
