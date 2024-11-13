@@ -14,6 +14,6 @@
 
 
 ### Design/UX: Leyang Ni
-
+I will use Figma to design the hamburger bar, profile page, and quarter info page. I will also slightly modify the layout of the main calendar page based on the changes we want to make (especially if we want to change the login method). 
 
 ### Process/Leadership: Tiger Yu
