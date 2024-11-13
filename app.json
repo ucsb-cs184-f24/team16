@@ -2,7 +2,7 @@
   "expo": {
     "name": "team16",
     "slug": "team16",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -36,8 +36,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "a2c4738d-8311-42fd-aceb-e888035d516d"
+        "projectId": "10d3ec46-890d-4fe1-b4a3-2fc53f37407a"
       }
-    }
+    },
+    "owner": "tigeryu8900"
   }
 }
