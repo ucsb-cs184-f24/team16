@@ -129,10 +129,9 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
         }
 
     //test
-        if (start.hour() === 23 && start.minute() === 59) {
-          start = start.hour(0).minute(0);
-          end = start.hour(1).minute(0);
-        }
+          if (end.hour() === 23 && end.minute() === 59) {
+            start = end.subtract(30, 'minute');
+          }
         canvasEventsByDate[dateString].push({
           start: start.format("YYYY-MM-DD HH:mm:ss"),
           end: end.format("YYYY-MM-DD HH:mm:ss"),
