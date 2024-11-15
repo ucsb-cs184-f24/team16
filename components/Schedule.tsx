@@ -1,10 +1,6 @@
-import groupBy from 'lodash/groupBy';
-import filter from 'lodash/filter';
-import find from 'lodash/find';
 import {CanvasEvent} from "@/helpers/api";
 
-import React, {PureComponent} from 'react';
-import {Alert} from 'react-native';
+import React, {Component} from 'react';
 import {
   ExpandableCalendar,
   TimelineEventProps,
@@ -13,7 +9,10 @@ import {
   TimelineProps,
 } from 'react-native-calendars';
 import {Quarter, UCSBEvents, UCSBSession} from "@/helpers/api";
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
 
 const INITIAL_TIME = {hour: 9, minutes: 0};
 
@@ -35,35 +34,34 @@ interface ScheduleProps {
 
 interface ScheduleState {
   currentDate: string;
-  UCSBEventsByDate: Record<string, TimelineEventProps[]>;
-  canvasEventsByDate: Record<string, TimelineEventProps[]>
 }
 
 interface Marked {
   marked: boolean;
 }
 
-export default class Schedule extends PureComponent<ScheduleProps, ScheduleState> {
+export default class Schedule extends Component<ScheduleProps, ScheduleState> {
   state: ScheduleState = {
-    currentDate: dayjs().format("YYYY-MM-DD"),
-    UCSBEventsByDate: {},
-    canvasEventsByDate: {}
+    currentDate: dayjs().format("YYYY-MM-DD")
   };
+
+  UCSBEventsByDate: Record<string, TimelineEventProps[]> = {};
+  canvasEventsByDate: Record<string, TimelineEventProps[]> = {};
 
   eventsByDate = new Proxy({} as Record<string, TimelineEventProps[]>, {
     has: (target: Record<string, TimelineEventProps[]>, p: string): boolean => {
       return target.hasOwnProperty(p)
-         || this.state.UCSBEventsByDate?.hasOwnProperty(p)
-         || this.state.canvasEventsByDate?.hasOwnProperty(p);
+         || this.UCSBEventsByDate?.hasOwnProperty(p)
+         || this.canvasEventsByDate?.hasOwnProperty(p);
     },
     get: (target: Record<string, TimelineEventProps[]>, p: string, _receiver: any): TimelineEventProps[] | undefined => {
       if (target.hasOwnProperty(p)
-           || this.state.UCSBEventsByDate?.hasOwnProperty(p)
-           || this.state.canvasEventsByDate?.hasOwnProperty(p)) {
+           || this.UCSBEventsByDate?.hasOwnProperty(p)
+           || this.canvasEventsByDate?.hasOwnProperty(p)) {
         return new Proxy([
           ...target[p] ?? [],
-          ...this.state.UCSBEventsByDate ? this.state.UCSBEventsByDate[p] ?? [] : [],
-          ...this.state.canvasEventsByDate ? this.state.canvasEventsByDate[p] ?? [] : []
+          ...this.UCSBEventsByDate ? this.UCSBEventsByDate[p] ?? [] : [],
+          ...this.canvasEventsByDate ? this.canvasEventsByDate[p] ?? [] : []
         ], {
           get: (target1: TimelineEventProps[], p1: string | symbol | number, _receiver1: any): any => {
             switch(p1) {
@@ -83,49 +81,43 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
       return true;
     },
     ownKeys: (target: Record<string, TimelineEventProps[]>): ArrayLike<string> => {
-      return [...new Set([
-        ...Object.keys(target),
-        ...this.state.UCSBEventsByDate ? Object.keys(this.state.UCSBEventsByDate) : [],
-        ...this.state.canvasEventsByDate ? Object.keys(this.state.canvasEventsByDate) : []
-      ])];
+      return Array.from(new Set(Object.keys(target).concat(
+        this.UCSBEventsByDate ? Object.keys(this.UCSBEventsByDate) : [],
+        this.canvasEventsByDate ? Object.keys(this.canvasEventsByDate) : []
+      )));
     }
   });
 
   componentDidMount() {
-    this.setState({
-      UCSBEventsByDate: this.processUCSBEvents(),
-      canvasEventsByDate: this.processCanvasEvents()
-    });
+    this.processUCSBEvents();
+    this.processCanvasEvents();
+    this.forceUpdate();
   }
 
-  componentDidUpdate(prevProps: ScheduleProps) {
+  shouldComponentUpdate(nextProps: Readonly<ScheduleProps>, nextState: Readonly<ScheduleState>, nextContext: any): boolean {
     let updated = false;
-    if (prevProps.ucsbEvents !== this.props.ucsbEvents) {
-      this.state.UCSBEventsByDate = this.processUCSBEvents();
-      updated = true;
+    if (this.props.ucsbEvents !== nextProps.ucsbEvents) {
+      updated ||= this.processUCSBEvents();
     }
-    if (prevProps.canvasEvents != this.state.canvasEvents) {
-      this.state.canvasEventsByDate = this.processCanvasEvents();
-      updated = true;
+    if (this.props.canvasEvents !== nextProps.canvasEvents) {
+      updated ||= this.processCanvasEvents();
     }
-    if (updated) {
-      this.setState(this.state);
-    }
+    return updated;
   }
 
-  processCanvasEvents(): Record<string, TimelineEventProps[]> {
+  processCanvasEvents(): boolean {
     const {canvasEvents} = this.props;
-    if (!canvasEvents) return;
+    if (!canvasEvents) return false;
     // this.setState({ canvasEventsByDate: {} });
-    const canvasEventsByDate: Record<string, TimelineEventProps[]> = {};
+    this.canvasEventsByDate = {};
     for (const course of canvasEvents) {
       for (const event of course.events) {
         console.log("Canvas event", event);
         let start = dayjs(event.start_at);
         let end = dayjs(event.end_at);
         const dateString = start.format("YYYY-MM-DD");
-        if (!canvasEventsByDate[dateString]) {
-          canvasEventsByDate[dateString] = [];
+        if (!this.canvasEventsByDate[dateString]) {
+          this.canvasEventsByDate[dateString] = [];
         }
 
     //test
@@ -133,7 +125,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
           start = start.hour(0).minute(0);
           end = start.hour(1).minute(0);
         }
-        canvasEventsByDate[dateString].push({
+        this.canvasEventsByDate[dateString].push({
           start: start.format("YYYY-MM-DD HH:mm:ss"),
           end: end.format("YYYY-MM-DD HH:mm:ss"),
           title: event.title,
@@ -142,16 +134,13 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
         });
       }
     }
-//     this.setState({canvasEventsByDate});
-    console.log("canvasEventsByDate", canvasEventsByDate);
-    return canvasEventsByDate;
+//     console.log("canvasEventsByDate", canvasEventsByDate);
+    return true;
   }
 
-  processUCSBEvents(): Record<string, TimelineEventProps[]> {
+  processUCSBEvents(): boolean {
     const { quarter, ucsbEvents } = this.props;
-    if (!quarter || !ucsbEvents) return;
-
-    // this.setState({ UCSBEventsByDate: {} });
+    if (!quarter || !ucsbEvents) return false;
 
     const UCSBSessionByDay: UCSBSession[][] = [[], [], [], [], [], [], []];
 
@@ -170,11 +159,11 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
     let end = dayjs(quarter.lastDayOfClasses);
     end = end.date(end.date() + 1);
 
-    const UCSBEventsByDate: Record<string, TimelineEventProps[]> = {};
+    this.UCSBEventsByDate = {};
 
     for (let date = dayjs(quarter.firstDayOfClasses); date.diff(end) < 0; date = date.date(date.date() + 1)) {
       const dateString = date.format("YYYY-MM-DD");
-      UCSBEventsByDate[dateString] = UCSBSessionByDay[date.day()].map(session => ({
+      this.UCSBEventsByDate[dateString] = UCSBSessionByDay[date.day()].map(session => ({
         start: dayjs(`${dateString} ${session.start}`, "YYYY-MM-DD h:mm A").format("YYYY-MM-DD HH:mm:ss"),
         end: dayjs(`${dateString} ${session.end}`, "YYYY-MM-DD h:mm A").format("YYYY-MM-DD HH:mm:ss"),
         title: session.name,
@@ -184,7 +173,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
     }
 
     for (const final of ucsbEvents.finals) {
-      UCSBEventsByDate[final.start.format("YYYY-MM-DD")] = [{
+      this.UCSBEventsByDate[final.start.format("YYYY-MM-DD")] = [{
         start: final.start.format("YYYY-MM-DD HH:mm:ss"),
         end: final.end.format("YYYY-MM-DD HH:mm:ss"),
         title: final.name,
@@ -193,10 +182,9 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
       }];
     }
 
-    console.log("UCSBEventsByDate", UCSBEventsByDate);
+    console.log("UCSBEventsByDate", this.UCSBEventsByDate);
 
-//     this.setState({UCSBEventsByDate});
-    return UCSBEventsByDate;
+    return true;
   }
 
   marked = new Proxy({} as Record<string, Marked>, {
@@ -219,7 +207,7 @@ export default class Schedule extends PureComponent<ScheduleProps, ScheduleState
       return true;
     },
     ownKeys: (target: Record<string, Marked>): ArrayLike<string> => {
-      return [...Object.keys(target), ...Object.keys(this.eventsByDate)];
+      return Array.from(new Set(Object.keys(target).concat(Object.keys(this.eventsByDate))));
     }
   });
 

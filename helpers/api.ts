@@ -1,4 +1,4 @@
-import { jsdom } from "jsdom-jscore-rn";
+import {jsdom} from "jsdom-jscore-rn";
 import "core-js/actual/url";
 import "core-js/actual/url-search-params";
 import dayjs, {Dayjs} from "dayjs";
@@ -35,15 +35,11 @@ export async function getQuarter(): Promise<Quarter> {
     'ucsb-api-key': '1M1qsvRB65v5n0CR9ihHJCsEJF2lCvZe'
   };
 
-  try {
-    const response = await fetch(url, { method: 'GET', headers: { headers: JSON.stringify(headers) } });
-    if (!response.ok) {
-      throw new Error('Failed to fetch quarter info');
-    }
-    return response.json();
-  } catch (error) {
-    throw error;
+  const response = await fetch(url, {method: 'GET', headers: {headers: JSON.stringify(headers)}});
+  if (!response.ok) {
+    throw new Error('Failed to fetch quarter info');
   }
+  return response.json();
 }
 
 export interface UCSBSession {
@@ -72,7 +68,7 @@ export interface UCSBEvents {
   finals: UCSBFinal[];
 }
 
-const UCSBFinalDatePattern = /\w+, (?<MMM>\w+) (?<D>\d+), (?<YYYY>\d+) (?<h1>\d+):(?<mm1>\d+) (?<A1>\w+) - (?<h2>\d+):(?<mm2>\d+) (?<A2>\w+)/;
+const UCSBFinalDatePattern = /\w+, (?<MMMM>\w+) (?<D>\d+), (?<YYYY>\d+) (?<h1>\d+):(?<mm1>\d+) (?<A1>\w+) - (?<h2>\d+):(?<mm2>\d+) (?<A2>\w+)/;
 
 export async function getUCSBEvents(headers: HeadersInit): Promise<UCSBEvents> {
   const response = await fetch("https://api-transformer.onrender.com//https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
@@ -150,11 +146,11 @@ export async function getUCSBEvents(headers: HeadersInit): Promise<UCSBEvents> {
     if (nameElement.textContent) {
       const match = timeElement.textContent?.match(UCSBFinalDatePattern);
       if (match?.groups) {
-        const {MMM, D, YYYY, h1, mm1, A1, h2, mm2, A2} = match.groups;
+        const {MMMM, D, YYYY, h1, mm1, A1, h2, mm2, A2} = match.groups;
         result.finals.push({
           name: nameElement.textContent.replaceAll(/\s+/g, " ").trim(),
-          start: dayjs(`${MMM} ${D}, ${YYYY} ${h1}:${mm1} ${A1}`, "MMM D, YYYY h:mm A"),
-          end: dayjs(`${MMM} ${D}, ${YYYY} ${h2}:${mm2} ${A2}`, "MMM D, YYYY h:mm A")
+          start: dayjs(`${MMMM} ${D}, ${YYYY} ${h1}:${mm1} ${A1}`, "MMMM D, YYYY h:mm A"),
+          end: dayjs(`${MMMM} ${D}, ${YYYY} ${h2}:${mm2} ${A2}`, "MMMM D, YYYY h:mm A")
         });
       }
     }
@@ -200,7 +196,9 @@ interface CanvasCourse {
   default_view: string;
   syllabus_body: string;
   needs_grading_count: number | null;
-  term: object | null;
+  term: {
+    name: string;
+  } | null;
   course_progress: any | null;
   apply_assignment_group_weights: boolean;
   permissions: {
@@ -267,8 +265,8 @@ interface CanvasAssignment {
 }
 
 export interface CanvasEvent {
-  courseId: string;
-  events: CanvasAssignment;
+  courseId: number;
+  events: CanvasAssignment[];
 }
 
 export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarter): Promise<CanvasEvent[]> {
@@ -292,7 +290,7 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
     throw new Error("Failed to fetch courses");
   }
 
-  const courses = await coursesResponse.json();
+  const courses: CanvasCourse[] = await coursesResponse.json();
 
   const currentCourses: CanvasCourse[] = [];
 
@@ -326,14 +324,13 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
     if (diffDays <= 30) {
       console.log(`Including Course ID: ${course.id}, Name: ${course.name}, Reason: Date within threshold`);
       currentCourses.push(course);
-    }
-    else {
+    } else {
       //console.log(`Excluding Course ID: ${course.id}, Name: ${course.name}, Reason: diffDays ${diffDays} > 30`);
     }
   }
 
   // Proceed with fetching events for current courses
-  const eventsPromises = currentCourses.map<PromiseLike<CanvasEvent>>(async (course: CanvasCourse[]) => {
+  const eventsPromises = currentCourses.map<PromiseLike<CanvasEvent>>(async (course: CanvasCourse, _index: number, _array: CanvasCourse[]): Promise<CanvasEvent> => {
     const courseId = course.id;
 
     const url = new URL("https://ucsb.instructure.com/api/v1/calendar_events");
@@ -354,7 +351,7 @@ export async function getCanvasAssignments(headers: HeadersInit, quarter: Quarte
     }
 
     const events: CanvasAssignment[] = await calendarEventsResponse.json();
-    return { courseId, events };
+    return {courseId, events};
   });
 
   const eventsByCourse = await Promise.all(eventsPromises);
