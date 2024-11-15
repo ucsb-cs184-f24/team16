@@ -11,6 +11,7 @@ import {
 import {Quarter, UCSBEvents, UCSBSession} from "@/helpers/api";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import {router} from "expo-router";
 
 dayjs.extend(customParseFormat);
 
@@ -225,6 +226,14 @@ export default class Schedule extends Component<ScheduleProps, ScheduleState> {
     unavailableHours: [{start: 0, end: 6}, {start: 22, end: 24}],
     overlapEventsSpacing: 8,
     rightEdgeSpacing: 24,
+    onEventPress(event: TimelineEventProps): void {
+      router.navigate({pathname: "/event-info", params: {
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        summary: event.summary ?? ""
+      }});
+    }
   };
 
   render() {
