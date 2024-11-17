@@ -2,37 +2,12 @@ import {type JSDOM} from "jsdom";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import type {UCSBCourse, UCSBEvents} from "../../../../types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 dayjs.tz.setDefault("America/Los_Angeles");
-
-interface UCSBSession {
-  name: string;
-  days: string[];
-  start: string;
-  end: string;
-  location: string;
-  url: string;
-  instructors: string[];
-}
-
-interface UCSBCourse {
-  name: string;
-  sessions: UCSBSession[];
-}
-
-interface UCSBFinal {
-  name: string;
-  start: string;
-  end: string;
-}
-
-export interface UCSBEvents {
-  courses: UCSBCourse[];
-  finals: UCSBFinal[];
-}
 
 const UCSBFinalDatePattern = new RegExp([
   /\w+, (?<MMMM>\w+) (?<D>\d+), (?<YYYY>\d+) /,
