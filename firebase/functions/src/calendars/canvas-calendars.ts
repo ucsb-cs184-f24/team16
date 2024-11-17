@@ -8,7 +8,7 @@ import type {
   CanvasAssignment,
   CanvasCourse,
   CanvasEvent,
-} from "../../../../types";
+} from "../types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

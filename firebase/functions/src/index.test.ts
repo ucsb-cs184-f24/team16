@@ -1,12 +1,16 @@
 import "dotenv/config";
 import {afterAll, beforeAll, expect, test} from "@jest/globals";
 import * as admin from "firebase-admin";
-import {type CalendarsData, getCalendars, getQuarters} from "./index";
+import {getCalendars, getQuarters} from "./index";
 import dayjs from "dayjs";
 import puppeteer, {CookieParam} from "puppeteer";
-import {type FunctionResponse, Status} from "./constants";
-import {type Quarter} from "./quarters";
 import firebaseFunctionsTest from "firebase-functions-test";
+import {
+  type CalendarsData,
+  type FunctionResponse,
+  type Quarter,
+  Status,
+} from "./types";
 
 const featuresList = firebaseFunctionsTest({
   databaseURL: "https://team16-441820-default-rtdb.firebaseio.com",

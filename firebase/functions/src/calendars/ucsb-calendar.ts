@@ -2,7 +2,7 @@ import {type JSDOM} from "jsdom";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import type {UCSBCourse, UCSBEvents} from "../../../../types";
+import type {UCSBCourse, UCSBEvents} from "../types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

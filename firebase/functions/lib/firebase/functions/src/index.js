@@ -24,7 +24,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getQuarters = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const types_1 = require("./types");
+const types_1 = require("../../../types");
 const quarters_1 = require("./quarters");
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript

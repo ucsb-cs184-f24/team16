@@ -33,7 +33,7 @@ const index_1 = require("./index");
 const dayjs_1 = __importDefault(require("dayjs"));
 const puppeteer_1 = __importDefault(require("puppeteer"));
 const firebase_functions_test_1 = __importDefault(require("firebase-functions-test"));
-const types_1 = require("./types");
+const types_1 = require("../../../types");
 const featuresList = (0, firebase_functions_test_1.default)({
     databaseURL: "https://team16-441820-default-rtdb.firebaseio.com",
     projectId: "team16-441820",

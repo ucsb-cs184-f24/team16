@@ -18,3 +18,8 @@ export interface Quarter {
   "lastDayToAddGrad": string;
   "lastDayThirdWeek": string;
 }
+
+export interface Quarters {
+  current: Quarter;
+  next: Quarter;
+}

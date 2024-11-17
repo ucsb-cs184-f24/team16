@@ -1,16 +1,15 @@
 import {onCall} from "firebase-functions/v2/https";
-import puppeteer, {CookieParam} from "puppeteer";
-import getUCSBEvents, {UCSBEvents} from "./ucsb-calendar";
-import getCanvasEvents, {CanvasEvent} from "./canvas-calendars";
-import {type FunctionResponse, Status} from "../constants";
+import puppeteer, {type CookieParam} from "puppeteer";
+import getUCSBEvents from "./ucsb-calendar";
+import getCanvasEvents from "./canvas-calendars";
 import * as admin from "firebase-admin";
 import {JSDOM} from "jsdom";
 import {logger} from "firebase-functions";
-
-export interface CalendarsData {
-  ucsbEvents: UCSBEvents;
-  canvasEvents: CanvasEvent[];
-}
+import {
+  type CalendarsData,
+  type FunctionResponse,
+  Status,
+} from "../types";
 
 export const getCalendars = onCall<
     CookieParam[] | void,
@@ -31,7 +30,7 @@ Promise<FunctionResponse<CalendarsData>> => {
             } else {
               return {
                 status: Status.NO_COOKIES,
-              };
+              } as FunctionResponse<CalendarsData>;
             }
           }
           const browser = await puppeteer.launch();
@@ -94,7 +93,7 @@ Promise<FunctionResponse<CalendarsData>> => {
             return {
               status: Status.OK,
               data: {ucsbEvents, canvasEvents},
-            };
+            } as FunctionResponse<CalendarsData>;
           } finally {
             await page0.goto("https://sso.ucsb.edu/cas/login");
             await doc.update({
@@ -105,13 +104,13 @@ Promise<FunctionResponse<CalendarsData>> => {
         } else {
           return {
             status: Status.NOT_SIGNED_IN,
-          };
+          } as FunctionResponse<CalendarsData>;
         }
       } catch (error) {
         console.error(error);
         return {
           status: Status.INTERNAL_SERVER_ERROR,
           error: error,
-        };
+        } as FunctionResponse<CalendarsData>;
       }
     });

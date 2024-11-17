@@ -1,6 +1,6 @@
 import {Mutex} from "async-mutex";
 import dayjs from "dayjs";
-import {Quarter} from "../../../helpers/api";
+import type {Quarter} from "./types";
 
 const quartersMutex = new Mutex();
 let quarters: Record<string, Quarter> | null = null;

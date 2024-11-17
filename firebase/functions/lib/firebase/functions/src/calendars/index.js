@@ -34,7 +34,7 @@ const canvas_calendars_1 = __importDefault(require("./canvas-calendars"));
 const admin = __importStar(require("firebase-admin"));
 const jsdom_1 = require("jsdom");
 const firebase_functions_1 = require("firebase-functions");
-const types_1 = require("../types");
+const types_1 = require("../../../../types");
 exports.getCalendars = (0, https_1.onCall)(async (request) => {
     try {
         const { auth, data } = request;

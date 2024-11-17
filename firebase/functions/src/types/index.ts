@@ -1,3 +1,4 @@
 export * from "./canvas";
-export * from "./ucsb";
+export * from "./firebase";
 export * from "./quarters";
+export * from "./ucsb";
