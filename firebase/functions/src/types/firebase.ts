@@ -9,7 +9,6 @@ export interface Credentials {
 export enum Status {
   OK = "OK",
   NOT_SIGNED_IN = "NOT_SIGNED_IN",
-  NO_COOKIES = "NO_COOKIES",
   INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
 }
 

@@ -7,9 +7,12 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {onCall} from "firebase-functions/v2/https";
+import {https} from "firebase-functions";
 import {type FunctionResponse, type Quarters, Status} from "./types";
 import {getCurrent, getNext} from "./quarters";
+import * as admin from "firebase-admin";
+
+admin.initializeApp();
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -17,7 +20,10 @@ import {getCurrent, getNext} from "./quarters";
 export * from "./calendars";
 
 export const getQuarters =
-    onCall<void, Promise<FunctionResponse<Quarters>>>(async () => {
+    https.onCall<null, Promise<FunctionResponse<Quarters>>>({
+      memory: "128MiB",
+      timeoutSeconds: 10,
+    }, async () => {
       try {
         return {
           status: Status.OK,

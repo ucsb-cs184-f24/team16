@@ -5,7 +5,6 @@ var Status;
 (function (Status) {
     Status["OK"] = "OK";
     Status["NOT_SIGNED_IN"] = "NOT_SIGNED_IN";
-    Status["NO_COOKIES"] = "NO_COOKIES";
     Status["INTERNAL_SERVER_ERROR"] = "INTERNAL_SERVER_ERROR";
 })(Status = exports.Status || (exports.Status = {}));
 //# sourceMappingURL=firebase.js.map

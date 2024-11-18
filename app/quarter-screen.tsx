@@ -1,25 +1,31 @@
-import React, {useEffect, useState} from 'react';
-import {Alert, FlatList, StyleSheet, Text, View} from 'react-native';
-import {getQuarter} from '@/helpers/api';
+import {useState} from 'react';
+import {FlatList, StyleSheet, Text, View} from 'react-native';
+import {getQuarters} from "@/helpers/firebase";
+import {Quarters} from "@/types";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import useFirebaseFunction from "@/hooks/useFirebaseFunction";
 
-type QuarterState = {
+dayjs.extend(customParseFormat);
+
+interface QuarterState {
   Year: string;
   Category: string;
   ClassState: string;
   PassState: string;
 }
 
-const parseQuarterData = (data: Record<string, any>): QuarterState => {
-  const currentDate = new Date();
+const parseQuarterData = (quarters: Quarters): QuarterState => {
+  const currentDate = dayjs();
 
-  const firstDayOfClasses = new Date(data.firstDayOfClasses);
-  const lastDayOfClasses = new Date(data.lastDayOfClasses);
-  const firstDayOfFinals = new Date(data.firstDayOfFinals);
-  const lastDayOfFinals = new Date(data.lastDayOfFinals);
-  const pass1Begin = new Date(data.pass1Begin);
-  const pass2Begin = new Date(data.pass2Begin);
-  const pass3Begin = new Date(data.pass3Begin);
-  const lastDay2Add = new Date(data.lastDayToAddUnderGrad);
+  const firstDayOfClasses = dayjs(quarters.current.firstDayOfClasses);
+  const lastDayOfClasses = dayjs(quarters.current.lastDayOfClasses);
+  const firstDayOfFinals = dayjs(quarters.current.firstDayOfFinals);
+  const lastDayOfFinals = dayjs(quarters.current.lastDayOfFinals);
+  const pass1Begin = dayjs(quarters.next.pass1Begin);
+  const pass2Begin = dayjs(quarters.next.pass2Begin);
+  const pass3Begin = dayjs(quarters.next.pass3Begin);
+  const lastDay2Add = dayjs(quarters.current.lastDayToAddUnderGrad);
 
   let classState: string = "Not in Class";
   let passState: string = "No pass info"
@@ -41,8 +47,8 @@ const parseQuarterData = (data: Record<string, any>): QuarterState => {
   }
 
   return {
-    Year: data.academicYear,
-    Category: data.category,
+    Year: quarters.current.academicYear,
+    Category: quarters.current.category,
     ClassState: classState,
     PassState: passState
   };
@@ -51,19 +57,15 @@ const parseQuarterData = (data: Record<string, any>): QuarterState => {
 export default function QuarterScreen() {
 
   const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const result = await getQuarter();
-        const parsedData = parseQuarterData(result);
-        setQuarterState(parsedData);
-      } catch (error) {
-        console.error(error);
-        Alert.alert("Error", "Failed to fetch quarter data.");
-      }
-    })();
-  }, []);
+  const quarters = useFirebaseFunction({
+    cache: "quarters",
+    duration: {days: 1},
+    callable: getQuarters,
+    requestData: null,
+  });
+  if (quarters) {
+    setQuarterState(parseQuarterData(quarters));
+  }
 
   if (!quarterState) {
     return (
