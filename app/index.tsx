@@ -1,4 +1,4 @@
-import {Button, StyleSheet, View} from 'react-native';
+import {Button, StyleSheet, View, Text} from 'react-native';
 import Schedule from '@/components/Schedule';
 import {router} from "expo-router";
 import {getCalendars, getQuarters} from "@/helpers/firebase";
@@ -8,6 +8,7 @@ import useCredentials from "@/hooks/useCredentials";
 import {useEffect, useState} from "react";
 import type {TimelineEventProps} from "react-native-calendars";
 import {processCalendars} from "@/helpers/calendars";
+import {MarkedDates} from "react-native-calendars/src/types";
 
 export default function Index() {
   const [credentials, setCredentials] = useCredentials();
@@ -27,10 +28,12 @@ export default function Index() {
   });
 
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
+  const [marked, setMarked] = useState<MarkedDates>({});
   useEffect(() => {
     if (calendars && quarters) {
-      const eventsByDate = processCalendars(calendars, quarters);
+      const [eventsByDate, marked] = processCalendars(calendars, quarters);
       setEventsByDate(eventsByDate);
+      setMarked(marked);
     }
   }, [calendars, quarters]);
 
@@ -42,9 +45,17 @@ export default function Index() {
             title="Check My Quarter"
             onPress={() => router.navigate('/quarter-screen')}
         />
-        <Schedule
-            eventsByDate={eventsByDate}
-        />
+        {eventsByDate ? (
+            <Schedule
+                eventsByDate={eventsByDate}
+                marked={marked}
+            />
+        ) : (
+            <>
+              <Text>Loading...</Text>
+              <Text>You may need to answer a Duo prompt.</Text>
+            </>
+        )}
 
       </View>
   ) : (

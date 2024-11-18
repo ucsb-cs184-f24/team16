@@ -13,7 +13,7 @@ const letterToDay: Record<string, number> = {
   S: 6
 };
 
-export function processCalendars(data: CalendarsData, quarters: Quarters): Record<string, TimelineEventProps[]> {
+export function processCalendars(data: CalendarsData, quarters: Quarters): [Record<string, TimelineEventProps[]>, MarkedDates] {
   const marked: MarkedDates = {};
   const eventsByDate: Record<string, TimelineEventProps[]> = {};
 
@@ -43,9 +43,13 @@ export function processCalendars(data: CalendarsData, quarters: Quarters): Recor
       summary: session.location,
       color: "#edf3fe"
     }));
+    marked[dateString] = {
+      marked: eventsByDate[dateString].length > 0
+    };
   }
 
   for (const final of data.ucsbEvents.finals) {
+    const dateString = dayjs(final.start).format("YYYY-MM-DD");
     eventsByDate[dayjs(final.start).format("YYYY-MM-DD")] = [{
       start: dayjs(final.start).format("YYYY-MM-DD HH:mm:ss"),
       end: dayjs(final.end).format("YYYY-MM-DD HH:mm:ss"),
@@ -53,6 +57,9 @@ export function processCalendars(data: CalendarsData, quarters: Quarters): Recor
       summary: "",
       color: "#2280bf"
     }];
+    marked[dateString] = {
+      marked: true
+    };
   }
 
   for (const course of data.canvasEvents) {
@@ -61,43 +68,43 @@ export function processCalendars(data: CalendarsData, quarters: Quarters): Recor
       let start = dayjs(event.start_at);
       let end = dayjs(event.end_at);
       end = end.hour(end.hour() + 1);
-      const dateString1 = start.hour(start.hour()).format("YYYY-MM-DD");
-      const dateString2 = end.hour(end.hour()).format("YYYY-MM-DD");
-      if (!eventsByDate[dateString1]) {
-        eventsByDate[dateString1] = [];
+      const dateString1 = start.format("YYYY-MM-DD");
+      const dateString2 = end.format("YYYY-MM-DD");
+      marked[dateString1] = {
+        marked: true
+      };
+      marked[dateString2] = {
+        marked: true
+      };
+      const dateString3 = start.hour(start.hour() - 1).format("YYYY-MM-DD");
+      const dateString4 = end.hour(end.hour() + 1).format("YYYY-MM-DD");
+      if (!eventsByDate[dateString3]) {
+        eventsByDate[dateString3] = [];
       }
-      if (!eventsByDate[dateString2]) {
-        eventsByDate[dateString2] = [];
+      if (!eventsByDate[dateString4]) {
+        eventsByDate[dateString4] = [];
       }
 
-      eventsByDate[dateString1].push({
-        date: dateString1,
+      const event2: TimelineEventProps = {
         start: start.format("YYYY-MM-DD HH:mm:ss"),
         end: end.format("YYYY-MM-DD HH:mm:ss"),
         title: event.title,
         summary: event.html_url,
         color: "#f3c09e"
+      };
+      eventsByDate[dateString3].push({
+        ...event2,
+        date: dateString3
       });
-      if (dateString1 !== dateString2) {
-        console.log("Duplicating event", {
-          date: dateString2,
-          start: start.format("YYYY-MM-DD HH:mm:ss"),
-          end: end.format("YYYY-MM-DD HH:mm:ss"),
-          title: event.title,
-          summary: event.html_url,
-          color: "#f3c09e"
-        });
-        eventsByDate[dateString2].push({
-          date: dateString2,
-          start: start.format("YYYY-MM-DD HH:mm:ss"),
-          end: end.format("YYYY-MM-DD HH:mm:ss"),
-          title: event.title,
-          summary: event.html_url,
-          color: "#f3c09e"
+      if (dateString3 !== dateString4) {
+        console.log("Duplicating event", event);
+        eventsByDate[dateString4].push({
+          ...event2,
+          date: dateString4
         });
       }
     }
   }
 
-  return eventsByDate;
+  return [eventsByDate, marked];
 }

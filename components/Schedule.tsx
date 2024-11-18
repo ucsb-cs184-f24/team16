@@ -9,28 +9,18 @@ import {
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import {router} from "expo-router";
+import {MarkedDates} from "react-native-calendars/src/types";
 
 
 dayjs.extend(customParseFormat);
 
 interface ScheduleProps {
   eventsByDate: Record<string, TimelineEventProps[]>;
+  marked: MarkedDates;
 }
 
-interface Marked {
-  marked: boolean;
-}
-
-export default function Schedule({eventsByDate}: ScheduleProps) {
+export default function Schedule({eventsByDate, marked}: ScheduleProps) {
   const [currentDate, setCurrentDate] = useState<string>(dayjs().format("YYYY-MM-DD"));
-  const [marked, setMarked] = useState<Record<string, Marked>>({});
-  useEffect(() => {
-    if (eventsByDate) {
-      setMarked(Object.fromEntries(Object.entries(eventsByDate).map(([date, events]) => [date, {
-        marked: events.length > 0
-      }])));
-    }
-  }, [eventsByDate]);
 
   const onDateChanged = useCallback((date: string, source: string) => {
     console.log('TimelineCalendarScreen onDateChanged: ', date, source);
