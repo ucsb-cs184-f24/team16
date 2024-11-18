@@ -1,4 +1,5 @@
 .cache/
+lib/
 service-account-key.json
 
 ### Node template
