@@ -16,9 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Go to App Directory
-        run: cd app
-
       - name: Get App Version
         id: get-app-version
         run: echo "version=$(jq -r .expo.version ./app.json)" >> $GITHUB_OUTPUT
@@ -69,9 +66,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Go to App Directory
-        run: cd app
 
       - name: Get App Version
         id: get-app-version
