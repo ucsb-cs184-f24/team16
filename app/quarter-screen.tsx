@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
 import {getQuarters} from "@/helpers/firebase";
 import {Quarters} from "@/types";
@@ -25,7 +25,7 @@ const parseQuarterData = (quarters: Quarters): QuarterState => {
   const pass1Begin = dayjs(quarters.next.pass1Begin);
   const pass2Begin = dayjs(quarters.next.pass2Begin);
   const pass3Begin = dayjs(quarters.next.pass3Begin);
-  const lastDay2Add = dayjs(quarters.current.lastDayToAddUnderGrad);
+  const lastDay2Add = dayjs(quarters.next.lastDayToAddUnderGrad);
 
   let classState: string = "Not in Class";
   let passState: string = "No pass info"
@@ -63,9 +63,11 @@ export default function QuarterScreen() {
     callable: getQuarters,
     requestData: null,
   });
-  if (quarters) {
-    setQuarterState(parseQuarterData(quarters));
-  }
+  useEffect(() => {
+    if (quarters) {
+      setQuarterState(parseQuarterData(quarters));
+    }
+  }, [quarters]);
 
   if (!quarterState) {
     return (
