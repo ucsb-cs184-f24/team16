@@ -1,7 +1,7 @@
 import {https, logger} from "firebase-functions";
 import puppeteer, {type Page} from "puppeteer";
 import getUCSBEvents from "./ucsb-calendar";
-import getCanvasEvents from "./canvas-calendars";
+import getCanvasAssignments from "./canvas-calendars";
 import {JSDOM} from "jsdom";
 import {
   type CalendarsData,
@@ -88,6 +88,7 @@ export const getCalendars = https.onCall<
         "--no-sandbox",
       ],
     });
+    const userAgent = await browser.userAgent();
     try {
       const data: Partial<CalendarsData> = {};
       keys ??= ["ucsbEvents", "canvasEvents", "gradescopeCourses"];
@@ -100,26 +101,30 @@ export const getCalendars = https.onCall<
           await session.send("Emulation.setFocusEmulationEnabled", {
             enabled: true,
           });
-          await session.detach();
           logger.log("Getting UCSB response");
           const release = await mutex.acquire();
-          let response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
+          await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
           await waitForAuth(page, params);
           release();
-          if (page.url() !== "https://my.sa.ucsb.edu/gold/StudentSchedule.aspx") {
-            response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-          }
-          if (page.url() !== "https://my.sa.ucsb.edu/gold/StudentSchedule.aspx") {
-            throw new Error("UCSB authentication failed");
-          }
-          if (!response) {
-            throw new Error("No UCSB Response");
-          }
+          const {cookies} = await session.send("Storage.getCookies");
+          session.detach().then();
+          page.close().then();
+          const cookieStr = cookies.filter((cookie) =>
+            "my.sa.ucsb.edu".endsWith(cookie.domain) &&
+            "/gold/StudentSchedule.aspx".startsWith(cookie.path)
+          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+          const response = await fetch("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
+            method: "GET",
+            headers: {
+              "accept": "text/html",
+              "cookie": cookieStr,
+              "user-agent": userAgent,
+            },
+          });
           logger.log("Processing UCSB response");
           const jsdom = new JSDOM(await response.text(), {
-            url: response.url(),
+            url: response.url,
           });
-          page.close().then();
           data.ucsbEvents = getUCSBEvents(jsdom);
         } break;
         case "canvasEvents": {
@@ -128,7 +133,6 @@ export const getCalendars = https.onCall<
           await session.send("Emulation.setFocusEmulationEnabled", {
             enabled: true,
           });
-          await session.detach();
           logger.log("Getting Canvas response");
           const release = await mutex.acquire();
           await page.goto("https://ucsb.instructure.com/");
@@ -136,16 +140,19 @@ export const getCalendars = https.onCall<
             await page.goto("https://ucsb.instructure.com/login/saml");
             await waitForAuth(page, params);
           }
-          release();
           if (page.url() !== "https://ucsb.instructure.com/") {
             await page.waitForNavigation();
           }
-          if (page.url() !== "https://ucsb.instructure.com/") {
-            throw new Error("Canvas authentication failed");
-          }
-          logger.log("Processing response");
-          data.canvasEvents = await getCanvasEvents(page);
+          release();
+          const {cookies} = await session.send("Storage.getCookies");
+          session.detach().then();
           page.close().then();
+          const cookieStr = cookies.filter((cookie) =>
+            "ucsb.instructure.com".endsWith(cookie.domain) &&
+            "/".startsWith(cookie.path)
+          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+          logger.log("Processing response");
+          data.canvasEvents = await getCanvasAssignments(userAgent, cookieStr);
         } break;
         case "gradescopeCourses": {
           const page = await browser.newPage();
@@ -153,42 +160,44 @@ export const getCalendars = https.onCall<
           await session.send("Emulation.setFocusEmulationEnabled", {
             enabled: true,
           });
-          await session.detach();
           logger.log("Getting Gradescope response");
           const release = await mutex.acquire();
           await page.goto("https://www.gradescope.com/auth/saml/ucsb");
           await waitForAuth(page, params);
           release();
-          while (page.url() !== "https://www.gradescope.com/") {
-            await page.waitForNavigation();
-          }
-          const response = await page.goto("https://www.gradescope.com/");
-          if (!response) {
-            throw new Error("No Canvas response");
-          }
-          const jsdom = new JSDOM(await response.text(), {
-            url: response.url(),
-          });
+          const {cookies} = await session.send("Storage.getCookies");
+          session.detach().then();
           page.close().then();
+          const cookieStr = cookies.filter((cookie) =>
+            "www.gradescope.com".endsWith(cookie.domain) &&
+            "/".startsWith(cookie.path)
+          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+          const response = await fetch("https://www.gradescope.com/", {
+            method: "GET",
+            headers: {
+              "accept": "text/html",
+              "cookie": cookieStr,
+              "user-agent": userAgent,
+            },
+          });
+          const jsdom = new JSDOM(await response.text(), {
+            url: response.url,
+          });
           const courses = getGradescopeCourses(jsdom);
           data.gradescopeCourses = await Promise.all(courses.map(async (
             course
           ) => {
-            const page = await browser.newPage();
-            const session = await page.createCDPSession();
-            await session.send("Emulation.setFocusEmulationEnabled", {
-              enabled: true,
+            const response = await fetch(course.href, {
+              method: "GET",
+              headers: {
+                "accept": "text/html",
+                "cookie": cookieStr,
+                "user-agent": userAgent,
+              },
             });
-            await session.detach();
-            logger.log("Getting course", course);
-            const response = await page.goto(course.href);
-            if (!response) {
-              throw new Error("No Canvas course response");
-            }
             const jsdom = new JSDOM(await response.text(), {
-              url: response.url(),
+              url: response.url,
             });
-            page.close().then();
             return {
               ...course,
               assignments: getGradescopeAssignments(jsdom),

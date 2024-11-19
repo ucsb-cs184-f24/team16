@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import {getCurrent} from "../quarters";
-import type {Page} from "puppeteer";
 import {logger} from "firebase-functions";
 import type {
   CanvasAssignment,
@@ -17,11 +16,14 @@ dayjs.tz.setDefault("America/Los_Angeles");
 
 /**
  * Get Canvas assignments
- * @param {Page} page - The Puppeteer page.
+ * @param {string} userAgent - The user agent.
+ * @param {string} cookieStr - The cookie string.
  * @return {Promise<CanvasEvent[]>}
  */
-export default async function getCanvasAssignments(page: Page):
-    Promise<CanvasEvent[]> {
+export default async function getCanvasAssignments(
+  userAgent: string,
+  cookieStr: string,
+): Promise<CanvasEvent[]> {
   const quarter = await getCurrent();
   const startDate = quarter.firstDayOfQuarter;
   const endDate = quarter.lastDayOfSchedule;
@@ -32,19 +34,22 @@ export default async function getCanvasAssignments(page: Page):
 
   logger.log("coursesUrl.href", coursesUrl.href);
 
-  const courses = await page.evaluate(async (url) => {
-    const coursesResponse = await fetch(url, {
-      method: "GET",
-    });
+  const coursesResponse = await fetch(coursesUrl, {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+      "cookie": cookieStr,
+      "user-agent": userAgent,
+    },
+  });
 
-    if (!coursesResponse.ok) {
-      const errorText = await coursesResponse.text();
-      console.error("Failed to fetch courses:", errorText);
-      throw new Error("Failed to fetch courses");
-    }
+  if (!coursesResponse.ok) {
+    const errorText = await coursesResponse.text();
+    logger.error("Failed to fetch courses:", errorText);
+    throw new Error("Failed to fetch courses");
+  }
 
-    return await coursesResponse.json() as CanvasCourse[];
-  }, coursesUrl.href);
+  const courses = await coursesResponse.json() as CanvasCourse[];
 
   const currentCourses: CanvasCourse[] = [];
 
@@ -100,37 +105,41 @@ export default async function getCanvasAssignments(page: Page):
   }
 
   // Proceed with fetching events for current courses
-  const eventsPromises = currentCourses.map<PromiseLike<CanvasEvent>>(
-    async (course: CanvasCourse, _index: number, _array: CanvasCourse[]):
-      Promise<CanvasEvent> => {
-      const courseId = course.id;
+  const url = new URL("https://ucsb.instructure.com/api/v1/calendar_events");
+  url.searchParams.append("type", "assignment");
+  url.searchParams.append("start_date", startDate);
+  url.searchParams.append("end_date", endDate);
+  for (const course of currentCourses) {
+    url.searchParams.append("context_codes[]", `course_${course.id}`);
+  }
+  const calendarEventsResponse = await fetch(url, {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+      "cookie": cookieStr,
+      "user-agent": userAgent,
+    },
+  });
 
-      const url = new URL("https://ucsb.instructure.com/api/v1/calendar_events");
-      url.searchParams.append("type", "assignment");
-      url.searchParams.append("start_date", startDate);
-      url.searchParams.append("end_date", endDate);
-      url.searchParams.append("context_codes[]", `course_${courseId}`);
+  if (!calendarEventsResponse.ok) {
+    const errorText = await calendarEventsResponse.text();
+    console.error("Failed to fetch calendar events:", errorText);
+    throw new Error("Failed to fetch calendar events");
+  }
 
-      const events = await page.evaluate(async (url) => {
-        const calendarEventsResponse = await fetch(url, {
-          method: "GET",
-        });
+  const events = await calendarEventsResponse.json() as CanvasAssignment[];
 
-        if (!calendarEventsResponse.ok) {
-          const errorText = await calendarEventsResponse.text();
-          console.error(`Failed to fetch calendar events for course ${
-            courseId
-          }:`, errorText);
-          throw new Error(`Failed to fetch calendar events for course ${
-            courseId
-          }`);
-        }
+  const eventsByContextCode: Record<string, CanvasAssignment[]> = {};
+  for (const event of events) {
+    if (!eventsByContextCode[event.context_code]) {
+      eventsByContextCode[event.context_code] = [event];
+    } else {
+      eventsByContextCode[event.context_code].push(event);
+    }
+  }
 
-        return await calendarEventsResponse.json() as CanvasAssignment[];
-      }, url.href);
-
-      return {courseId, events};
-    });
-
-  return await Promise.all(eventsPromises);
+  return Object.entries(eventsByContextCode).map(([contextCode, events]) => ({
+    courseId: parseInt(contextCode.substring("course_".length)),
+    events: events,
+  }));
 }
