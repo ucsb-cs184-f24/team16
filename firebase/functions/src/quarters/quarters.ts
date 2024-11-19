@@ -1,6 +1,6 @@
 import {Mutex} from "async-mutex";
 import dayjs from "dayjs";
-import type {Quarter} from "./types";
+import type {Quarter} from "../types";
 
 const quartersMutex = new Mutex();
 let quarters: Record<string, Quarter> | null = null;
@@ -11,7 +11,7 @@ let next: Quarter | null = null;
  * Get all quarters
  * @return {Promise<Record<string, Quarter>>}
  */
-export async function getQuarters(): Promise<Record<string, Quarter>> {
+export async function loadQuarters(): Promise<Record<string, Quarter>> {
   if (!quarters) {
     const release = await quartersMutex.acquire();
     try {
@@ -58,7 +58,7 @@ export async function getQuarters(): Promise<Record<string, Quarter>> {
  * @return {Promise<Quarter>}
  */
 export async function getCurrent(): Promise<Quarter> {
-  await getQuarters();
+  await loadQuarters();
   if (!current) {
     throw new Error("Cannot find quarter");
   }
@@ -70,7 +70,7 @@ export async function getCurrent(): Promise<Quarter> {
  * @return {Promise<Quarter>}
  */
 export async function getNext(): Promise<Quarter> {
-  await getQuarters();
+  await loadQuarters();
   if (!next) {
     throw new Error("Cannot find quarter");
   }

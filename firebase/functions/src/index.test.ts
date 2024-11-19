@@ -16,6 +16,7 @@ import type {
   CallableRequest,
   Request,
 } from "firebase-functions/https";
+import {getBrowser} from "./puppeteer";
 
 const featuresList = firebaseFunctionsTest({
   databaseURL: "https://team16-441820-default-rtdb.firebaseio.com",
@@ -87,6 +88,7 @@ test("test-get-quarters", async () => {
   }
 });
 
-afterAll(() => {
+afterAll(async () => {
   featuresList.cleanup();
+  await (await getBrowser()).close();
 });

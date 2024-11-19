@@ -1,5 +1,5 @@
 import {https, logger} from "firebase-functions";
-import puppeteer, {type Page} from "puppeteer";
+import type {Page} from "puppeteer";
 import getUCSBEvents from "./ucsb-calendar";
 import getCanvasAssignments from "./canvas-calendars";
 import {JSDOM} from "jsdom";
@@ -14,6 +14,7 @@ import {
   getGradescopeCourses,
 } from "./gradescope-calendars";
 import {Mutex} from "async-mutex";
+import {browserContextCache, getUserAgent} from "../puppeteer";
 
 /**
  * Wait for UCSB auth
@@ -76,145 +77,137 @@ export const getCalendars = https.onCall<
     } as ResponseData<CalendarsData>;
   }
   try {
-    logger.log("Launching browser");
-    const browser = await puppeteer.launch({
-      headless: true,
-      pipe: true,
-      args: [
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-setuid-sandbox",
-        "--no-sandbox",
-      ],
-    });
-    const userAgent = await browser.userAgent();
-    try {
-      const data: Partial<CalendarsData> = {};
-      keys ??= ["ucsbEvents", "canvasEvents", "gradescopeCourses"];
-      const mutex = new Mutex();
-      await Promise.all(keys.map(async (key) => {
-        switch (key) {
-        case "ucsbEvents": {
-          const page = await browser.newPage();
-          const session = await page.createCDPSession();
-          await session.send("Emulation.setFocusEmulationEnabled", {
-            enabled: true,
-          });
-          logger.log("Getting UCSB response");
-          const release = await mutex.acquire();
-          await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-          await waitForAuth(page, params);
-          release();
-          const {cookies} = await session.send("Storage.getCookies");
-          session.detach().then();
-          page.close().then();
-          const cookieStr = cookies.filter((cookie) =>
-            "my.sa.ucsb.edu".endsWith(cookie.domain) &&
-            "/gold/StudentSchedule.aspx".startsWith(cookie.path)
-          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-          const response = await fetch("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
-            method: "GET",
-            headers: {
-              "accept": "text/html",
-              "cookie": cookieStr,
-              "user-agent": userAgent,
-            },
-          });
-          logger.log("Processing UCSB response");
-          const jsdom = new JSDOM(await response.text(), {
-            url: response.url,
-          });
-          data.ucsbEvents = getUCSBEvents(jsdom);
-        } break;
-        case "canvasEvents": {
-          const page = await browser.newPage();
-          const session = await page.createCDPSession();
-          await session.send("Emulation.setFocusEmulationEnabled", {
-            enabled: true,
-          });
-          logger.log("Getting Canvas response");
-          const release = await mutex.acquire();
-          await page.goto("https://ucsb.instructure.com/");
-          if (page.url() === "https://www.canvas.ucsb.edu/") {
-            await page.goto("https://ucsb.instructure.com/login/saml");
-            await waitForAuth(page, params);
-          }
-          if (page.url() !== "https://ucsb.instructure.com/") {
-            await page.waitForNavigation();
-          }
-          release();
-          const {cookies} = await session.send("Storage.getCookies");
-          session.detach().then();
-          page.close().then();
-          const cookieStr = cookies.filter((cookie) =>
-            "ucsb.instructure.com".endsWith(cookie.domain) &&
-            "/".startsWith(cookie.path)
-          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-          logger.log("Processing response");
-          data.canvasEvents = await getCanvasAssignments(userAgent, cookieStr);
-        } break;
-        case "gradescopeCourses": {
-          const page = await browser.newPage();
-          const session = await page.createCDPSession();
-          await session.send("Emulation.setFocusEmulationEnabled", {
-            enabled: true,
-          });
-          logger.log("Getting Gradescope response");
-          const release = await mutex.acquire();
-          await page.goto("https://www.gradescope.com/auth/saml/ucsb");
-          await waitForAuth(page, params);
-          release();
-          const {cookies} = await session.send("Storage.getCookies");
-          session.detach().then();
-          page.close().then();
-          const cookieStr = cookies.filter((cookie) =>
-            "www.gradescope.com".endsWith(cookie.domain) &&
-            "/".startsWith(cookie.path)
-          ).map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-          const response = await fetch("https://www.gradescope.com/", {
-            method: "GET",
-            headers: {
-              "accept": "text/html",
-              "cookie": cookieStr,
-              "user-agent": userAgent,
-            },
-          });
-          const jsdom = new JSDOM(await response.text(), {
-            url: response.url,
-          });
-          const courses = getGradescopeCourses(jsdom);
-          data.gradescopeCourses = await Promise.all(courses.map(async (
-            course
-          ) => {
-            const response = await fetch(course.href, {
-              method: "GET",
-              headers: {
-                "accept": "text/html",
-                "cookie": cookieStr,
-                "user-agent": userAgent,
-              },
-            });
-            const jsdom = new JSDOM(await response.text(), {
-              url: response.url,
-            });
-            return {
-              ...course,
-              assignments: getGradescopeAssignments(jsdom),
-            };
-          }));
-        } break;
-        }
-      }));
-      logger.log("Returning data", data);
+    logger.log("Getting browser context");
+    const context = await browserContextCache.fetch(params.username);
+    if (!context) {
+      logger.error("Cannot get browser context");
       return {
-        status: Status.OK,
-        data,
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: new Error("Cannot get browser context"),
       };
-    } finally {
-      logger.log("Closing browser");
-      await browser.close();
     }
+    const userAgent = await getUserAgent();
+    const data: Partial<CalendarsData> = {};
+    keys ??= ["ucsbEvents", "canvasEvents", "gradescopeCourses"];
+    const mutex = new Mutex();
+    await Promise.all(keys.map(async (key) => {
+      switch (key) {
+      case "ucsbEvents": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting UCSB response");
+        const release = await mutex.acquire();
+        await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
+        await waitForAuth(page, params);
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        const response = await fetch("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
+          method: "GET",
+          headers: {
+            "accept": "text/html",
+            "cookie": cookieStr,
+            "user-agent": userAgent,
+          },
+        });
+        logger.log("Processing UCSB response");
+        const jsdom = new JSDOM(await response.text(), {
+          url: response.url,
+        });
+        data.ucsbEvents = getUCSBEvents(jsdom);
+      } break;
+      case "canvasEvents": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting Canvas response");
+        const release = await mutex.acquire();
+        await page.goto("https://ucsb.instructure.com/");
+        if (page.url() === "https://www.canvas.ucsb.edu/") {
+          await page.goto("https://ucsb.instructure.com/login/saml");
+          await waitForAuth(page, params);
+        }
+        if (page.url() !== "https://ucsb.instructure.com/") {
+          await page.waitForNavigation();
+        }
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        logger.log("Processing response");
+        data.canvasEvents = await getCanvasAssignments(userAgent, cookieStr);
+      } break;
+      case "gradescopeCourses": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting Gradescope response");
+        const release = await mutex.acquire();
+        await page.goto("https://www.gradescope.com/auth/saml/ucsb");
+        await waitForAuth(page, params);
+        while (page.url() !== "https://www.gradescope.com/") {
+          await page.waitForNavigation();
+        }
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        const response = await fetch("https://www.gradescope.com/", {
+          method: "GET",
+          headers: {
+            "accept": "text/html",
+            "cookie": cookieStr,
+            "user-agent": userAgent,
+          },
+        });
+        const jsdom = new JSDOM(await response.text(), {
+          url: response.url,
+        });
+        const courses = getGradescopeCourses(jsdom);
+        data.gradescopeCourses = await Promise.all(courses.map(async (
+          course
+        ) => {
+          const response = await fetch(course.href, {
+            method: "GET",
+            headers: {
+              "accept": "text/html",
+              "cookie": cookieStr,
+              "user-agent": userAgent,
+            },
+          });
+          const jsdom = new JSDOM(await response.text(), {
+            url: response.url,
+          });
+          return {
+            ...course,
+            assignments: getGradescopeAssignments(jsdom),
+          };
+        }));
+      } break;
+      }
+    }));
+    logger.log("Returning data", data);
+    return {
+      status: Status.OK,
+      data,
+    };
   } catch (error) {
     logger.error(error);
     return {
