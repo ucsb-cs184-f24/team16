@@ -16,15 +16,15 @@ export default function Index() {
     caches: {
       ucsbEvents: {
         key: "calendars.ucsbEvents",
-        duration: {days: 0},
+        duration: {days: 14},
       },
       canvasEvents: {
         key: "calendars.canvasEvents",
-        duration: {hours: 0},
+        duration: {hours: 1},
       },
       gradescopeCourses: {
         key: "calendars.gradescopeCourses",
-        duration: {hours: 0},
+        duration: {hours: 1},
       }
     },
     callable: getCalendars,
