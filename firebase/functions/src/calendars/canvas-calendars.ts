@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import {getCurrent} from "../quarters";
-import {Page} from "puppeteer";
+import type {Page} from "puppeteer";
 import {logger} from "firebase-functions";
 import type {
   CanvasAssignment,

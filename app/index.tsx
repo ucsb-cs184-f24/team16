@@ -8,34 +8,54 @@ import useCredentials from "@/hooks/useCredentials";
 import {useEffect, useState} from "react";
 import type {TimelineEventProps} from "react-native-calendars";
 import {processCalendars} from "@/helpers/calendars";
-import {MarkedDates} from "react-native-calendars/src/types";
+import type {MarkedDates} from "react-native-calendars/src/types";
 
 export default function Index() {
   const [credentials, setCredentials] = useCredentials();
   const calendars = useFirebaseFunction({
-    cache: "calendars",
-    duration: {days: 1},
+    caches: {
+      ucsbEvents: {
+        key: "calendars.ucsbEvents",
+        duration: {days: 0},
+      },
+      canvasEvents: {
+        key: "calendars.canvasEvents",
+        duration: {hours: 0},
+      },
+      gradescopeCourses: {
+        key: "calendars.gradescopeCourses",
+        duration: {hours: 0},
+      }
+    },
     callable: getCalendars,
-    requestData: credentials,
-    condition: calendars => !!credentials && !calendars,
+    params: credentials,
+    condition: calendars => !!credentials && (
+        !calendars?.gradescopeCourses || !calendars?.canvasEvents || !calendars?.ucsbEvents
+    ),
     onFail: () => setCredentials(null),
   });
   const quarters = useFirebaseFunction({
-    cache: "quarters",
-    duration: {days: 1},
+    cache: {
+      key: "quarters",
+      duration: {days: 1}
+    },
     callable: getQuarters,
-    requestData: null,
+    params: null,
   });
 
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});
   useEffect(() => {
-    if (calendars && quarters) {
+    if (calendars &&
+        calendars.gradescopeCourses &&
+        calendars.canvasEvents &&
+        calendars.ucsbEvents &&
+        quarters) {
       const [eventsByDate, marked] = processCalendars(calendars, quarters);
       setEventsByDate(eventsByDate);
       setMarked(marked);
     }
-  }, [calendars, quarters]);
+  }, [calendars?.gradescopeCourses, calendars?.canvasEvents, calendars?.ucsbEvents, quarters, calendars]);
 
   return credentials ? (
       <View
@@ -45,7 +65,10 @@ export default function Index() {
             title="Check My Quarter"
             onPress={() => router.navigate('/quarter-screen')}
         />
-        {eventsByDate ? (
+        {calendars &&
+        calendars.gradescopeCourses &&
+        calendars.canvasEvents &&
+        calendars.ucsbEvents ? (
             <Schedule
                 eventsByDate={eventsByDate}
                 marked={marked}

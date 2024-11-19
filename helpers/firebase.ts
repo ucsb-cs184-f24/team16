@@ -10,11 +10,12 @@ import {type FirebaseApp, type FirebaseOptions, initializeApp} from 'firebase/ap
 // import {type Firestore, getFirestore} from "@firebase/firestore";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 import {type Functions, getFunctions, httpsCallable} from "@firebase/functions";
-import {
-  type CalendarsData,
-  type Credentials,
-  type FunctionResponse,
-  type Quarters,
+import type {
+  CalendarsData,
+  Credentials,
+  Quarters,
+  RequestData,
+  ResponseData,
 } from "@/types";
 
 // Optionally import the services that you want to use
@@ -95,8 +96,14 @@ export const app: FirebaseApp = initializeApp(firebase);
 // export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app);
 
-export const getCalendars = httpsCallable<Credentials | null, FunctionResponse<CalendarsData>>(functions, "getCalendars");
-export const getQuarters = httpsCallable<null, FunctionResponse<Quarters>>(functions, "getQuarters");
+export const getCalendars = httpsCallable<
+    RequestData<Credentials | null, CalendarsData>,
+    ResponseData<CalendarsData>
+>(functions, "getCalendars");
+export const getQuarters = httpsCallable<
+    RequestData<null, Quarters>,
+    ResponseData<Quarters>
+>(functions, "getQuarters");
 
 console.log("firebase initialized");
 

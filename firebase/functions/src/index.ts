@@ -8,7 +8,12 @@
  */
 
 import {https} from "firebase-functions";
-import {type FunctionResponse, type Quarters, Status} from "./types";
+import {
+  type RequestData,
+  type ResponseData,
+  type Quarters,
+  Status,
+} from "./types";
 import {getCurrent, getNext} from "./quarters";
 import * as admin from "firebase-admin";
 
@@ -20,24 +25,33 @@ admin.initializeApp();
 export * from "./calendars";
 
 export const getQuarters =
-    https.onCall<null, Promise<FunctionResponse<Quarters>>>({
-      memory: "128MiB",
+    https.onCall<RequestData<null, Quarters>, Promise<ResponseData<Quarters>>>({
+      memory: "256MiB",
       timeoutSeconds: 10,
-    }, async () => {
+    }, async ({data: {keys}}) => {
       try {
+        const data: Partial<Quarters> = {};
+        keys ??= ["current", "next"];
+        await Promise.all(keys.map(async (key) => {
+          switch (key) {
+          case "current":
+            data.current = await getCurrent();
+            break;
+          case "next":
+            data.next = await getNext();
+            break;
+          }
+        }));
         return {
           status: Status.OK,
-          data: {
-            current: await getCurrent(),
-            next: await getNext(),
-          },
-        } as FunctionResponse<Quarters>;
+          data,
+        };
       } catch (error) {
         console.error(error);
         return {
           status: Status.INTERNAL_SERVER_ERROR,
           error: error,
-        } as FunctionResponse<Quarters>;
+        };
       }
     });
 

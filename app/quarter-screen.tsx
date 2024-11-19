@@ -58,10 +58,12 @@ export default function QuarterScreen() {
 
   const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
   const quarters = useFirebaseFunction({
-    cache: "quarters",
-    duration: {days: 1},
+    cache: {
+      key: "quarters",
+      duration: {days: 1}
+    },
     callable: getQuarters,
-    requestData: null,
+    params: null,
   });
   useEffect(() => {
     if (quarters) {

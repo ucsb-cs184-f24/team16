@@ -5,10 +5,15 @@ import getCanvasEvents from "./canvas-calendars";
 import {JSDOM} from "jsdom";
 import {
   type CalendarsData,
-  type Credentials,
-  type FunctionResponse,
+  type Credentials, RequestData,
+  type ResponseData,
   Status,
 } from "../types";
+import {
+  getGradescopeAssignments,
+  getGradescopeCourses,
+} from "./gradescope-calendars";
+import {Mutex} from "async-mutex";
 
 /**
  * Wait for UCSB auth
@@ -21,6 +26,7 @@ async function waitForAuth(
   credentials: Credentials
 ): Promise<void> {
   logger.log("waitForAuth");
+  await page.bringToFront();
   while (
     page.url().startsWith("https://sso.ucsb.edu/cas/login") &&
     await page.$("div.alert-success").then(
@@ -33,7 +39,6 @@ async function waitForAuth(
       () => false
     )) {
       logger.log("Waiting for Duo authentication");
-      await page.bringToFront();
       await page.waitForNavigation({
         timeout: 60000,
       });
@@ -57,18 +62,18 @@ async function waitForAuth(
 }
 
 export const getCalendars = https.onCall<
-  Credentials | null,
-  Promise<FunctionResponse<CalendarsData>>
+  RequestData<Credentials | null, CalendarsData>,
+  Promise<ResponseData<CalendarsData>>
 >({
   memory: "2GiB",
   timeoutSeconds: 120,
-}, async ({data}): Promise<FunctionResponse<CalendarsData>> => {
-  logger.log("data:", data);
-  if (!data) {
+}, async ({data: {params, keys}}): Promise<ResponseData<CalendarsData>> => {
+  logger.log("params:", params);
+  if (!params) {
     logger.log("Not signed in");
     return {
       status: Status.NOT_SIGNED_IN,
-    } as FunctionResponse<CalendarsData>;
+    } as ResponseData<CalendarsData>;
   }
   try {
     logger.log("Launching browser");
@@ -84,15 +89,23 @@ export const getCalendars = https.onCall<
       ],
     });
     try {
-      const page = await browser.newPage();
-      await page.goto("https://sso.ucsb.edu/cas/login");
-      await waitForAuth(page, data);
-      const [ucsbEvents, canvasEvents] = await Promise.all([
-        (async (page) => {
+      const data: Partial<CalendarsData> = {};
+      keys ??= ["ucsbEvents", "canvasEvents", "gradescopeCourses"];
+      const mutex = new Mutex();
+      await Promise.all(keys.map(async (key) => {
+        switch (key) {
+        case "ucsbEvents": {
+          const page = await browser.newPage();
+          const session = await page.createCDPSession();
+          await session.send("Emulation.setFocusEmulationEnabled", {
+            enabled: true,
+          });
+          await session.detach();
           logger.log("Getting UCSB response");
-          await page.bringToFront();
+          const release = await mutex.acquire();
           let response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-          await waitForAuth(page, data);
+          await waitForAuth(page, params);
+          release();
           if (page.url() !== "https://my.sa.ucsb.edu/gold/StudentSchedule.aspx") {
             response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
           }
@@ -103,17 +116,27 @@ export const getCalendars = https.onCall<
             throw new Error("No UCSB Response");
           }
           logger.log("Processing UCSB response");
-          const jsdom = new JSDOM(await response.text());
-          return getUCSBEvents(jsdom);
-        })(await browser.newPage()),
-        (async (page) => {
+          const jsdom = new JSDOM(await response.text(), {
+            url: response.url(),
+          });
+          page.close().then();
+          data.ucsbEvents = getUCSBEvents(jsdom);
+        } break;
+        case "canvasEvents": {
+          const page = await browser.newPage();
+          const session = await page.createCDPSession();
+          await session.send("Emulation.setFocusEmulationEnabled", {
+            enabled: true,
+          });
+          await session.detach();
           logger.log("Getting Canvas response");
-          await page.bringToFront();
+          const release = await mutex.acquire();
           await page.goto("https://ucsb.instructure.com/");
           if (page.url() === "https://www.canvas.ucsb.edu/") {
             await page.goto("https://ucsb.instructure.com/login/saml");
-            await waitForAuth(page, data);
+            await waitForAuth(page, params);
           }
+          release();
           if (page.url() !== "https://ucsb.instructure.com/") {
             await page.waitForNavigation();
           }
@@ -121,15 +144,64 @@ export const getCalendars = https.onCall<
             throw new Error("Canvas authentication failed");
           }
           logger.log("Processing response");
-          return getCanvasEvents(page);
-        })(await browser.newPage()),
-      ]);
-      const result = {
+          data.canvasEvents = await getCanvasEvents(page);
+          page.close().then();
+        } break;
+        case "gradescopeCourses": {
+          const page = await browser.newPage();
+          const session = await page.createCDPSession();
+          await session.send("Emulation.setFocusEmulationEnabled", {
+            enabled: true,
+          });
+          await session.detach();
+          logger.log("Getting Gradescope response");
+          const release = await mutex.acquire();
+          await page.goto("https://www.gradescope.com/auth/saml/ucsb");
+          await waitForAuth(page, params);
+          release();
+          while (page.url() !== "https://www.gradescope.com/") {
+            await page.waitForNavigation();
+          }
+          const response = await page.goto("https://www.gradescope.com/");
+          if (!response) {
+            throw new Error("No Canvas response");
+          }
+          const jsdom = new JSDOM(await response.text(), {
+            url: response.url(),
+          });
+          page.close().then();
+          const courses = getGradescopeCourses(jsdom);
+          data.gradescopeCourses = await Promise.all(courses.map(async (
+            course
+          ) => {
+            const page = await browser.newPage();
+            const session = await page.createCDPSession();
+            await session.send("Emulation.setFocusEmulationEnabled", {
+              enabled: true,
+            });
+            await session.detach();
+            logger.log("Getting course", course);
+            const response = await page.goto(course.href);
+            if (!response) {
+              throw new Error("No Canvas course response");
+            }
+            const jsdom = new JSDOM(await response.text(), {
+              url: response.url(),
+            });
+            page.close().then();
+            return {
+              ...course,
+              assignments: getGradescopeAssignments(jsdom),
+            };
+          }));
+        } break;
+        }
+      }));
+      logger.log("Returning data", data);
+      return {
         status: Status.OK,
-        data: {ucsbEvents, canvasEvents},
-      } as FunctionResponse<CalendarsData>;
-      logger.log("Returning result", result);
-      return result;
+        data,
+      };
     } finally {
       logger.log("Closing browser");
       await browser.close();
@@ -139,6 +211,6 @@ export const getCalendars = https.onCall<
     return {
       status: Status.INTERNAL_SERVER_ERROR,
       error: error,
-    } as FunctionResponse<CalendarsData>;
+    };
   }
 });

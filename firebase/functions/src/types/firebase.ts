@@ -1,5 +1,6 @@
 import type {UCSBEvents} from "./ucsb";
 import type {CanvasEvent} from "./canvas";
+import type {GradescopeCourse} from "./gradescope";
 
 export interface Credentials {
   username: string;
@@ -12,13 +13,21 @@ export enum Status {
   INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
 }
 
-export interface FunctionResponse<T, S extends Status = Status> {
-  status: S;
-  data: S extends Status.OK ? T : never;
-  error: S extends Status.OK ? never : any;
+export interface RequestData<Params = unknown, Data = unknown> {
+  params: Params;
+  keys?: (keyof Data)[];
+}
+
+export type ResponseData<T> = {
+  status: Status.OK;
+  data: Partial<T>
+} | {
+  status: Exclude<Status, Status.OK>;
+  error: unknown;
 }
 
 export interface CalendarsData {
   ucsbEvents: UCSBEvents;
   canvasEvents: CanvasEvent[];
+  gradescopeCourses: GradescopeCourse[];
 }
