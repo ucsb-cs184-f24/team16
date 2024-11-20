@@ -1,14 +1,20 @@
 import {https, logger} from "firebase-functions";
-import puppeteer, {type Page} from "puppeteer";
+import type {Page} from "puppeteer";
 import getUCSBEvents from "./ucsb-calendar";
-import getCanvasEvents from "./canvas-calendars";
+import getCanvasAssignments from "./canvas-calendars";
 import {JSDOM} from "jsdom";
 import {
   type CalendarsData,
-  type Credentials,
-  type FunctionResponse,
+  type Credentials, RequestData,
+  type ResponseData,
   Status,
 } from "../types";
+import {
+  getGradescopeAssignments,
+  getGradescopeCourses,
+} from "./gradescope-calendars";
+import {Mutex} from "async-mutex";
+import {browserContextCache, getUserAgent} from "../puppeteer";
 
 /**
  * Wait for UCSB auth
@@ -21,6 +27,7 @@ async function waitForAuth(
   credentials: Credentials
 ): Promise<void> {
   logger.log("waitForAuth");
+  await page.bringToFront();
   while (
     page.url().startsWith("https://sso.ucsb.edu/cas/login") &&
     await page.$("div.alert-success").then(
@@ -33,7 +40,6 @@ async function waitForAuth(
       () => false
     )) {
       logger.log("Waiting for Duo authentication");
-      await page.bringToFront();
       await page.waitForNavigation({
         timeout: 60000,
       });
@@ -57,88 +63,156 @@ async function waitForAuth(
 }
 
 export const getCalendars = https.onCall<
-  Credentials | null,
-  Promise<FunctionResponse<CalendarsData>>
+  RequestData<Credentials | null, CalendarsData>,
+  Promise<ResponseData<CalendarsData>>
 >({
   memory: "2GiB",
   timeoutSeconds: 120,
-}, async ({data}): Promise<FunctionResponse<CalendarsData>> => {
-  logger.log("data:", data);
-  if (!data) {
+}, async ({data: {params, keys}}): Promise<ResponseData<CalendarsData>> => {
+  logger.log("params:", params);
+  if (!params) {
     logger.log("Not signed in");
     return {
       status: Status.NOT_SIGNED_IN,
-    } as FunctionResponse<CalendarsData>;
+    } as ResponseData<CalendarsData>;
   }
   try {
-    logger.log("Launching browser");
-    const browser = await puppeteer.launch({
-      headless: true,
-      pipe: true,
-      args: [
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-setuid-sandbox",
-        "--no-sandbox",
-      ],
-    });
-    try {
-      const page = await browser.newPage();
-      await page.goto("https://sso.ucsb.edu/cas/login");
-      await waitForAuth(page, data);
-      const [ucsbEvents, canvasEvents] = await Promise.all([
-        (async (page) => {
-          logger.log("Getting UCSB response");
-          await page.bringToFront();
-          let response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-          await waitForAuth(page, data);
-          if (page.url() !== "https://my.sa.ucsb.edu/gold/StudentSchedule.aspx") {
-            response = await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-          }
-          if (page.url() !== "https://my.sa.ucsb.edu/gold/StudentSchedule.aspx") {
-            throw new Error("UCSB authentication failed");
-          }
-          if (!response) {
-            throw new Error("No UCSB Response");
-          }
-          logger.log("Processing UCSB response");
-          const jsdom = new JSDOM(await response.text());
-          return getUCSBEvents(jsdom);
-        })(await browser.newPage()),
-        (async (page) => {
-          logger.log("Getting Canvas response");
-          await page.bringToFront();
-          await page.goto("https://ucsb.instructure.com/");
-          if (page.url() === "https://www.canvas.ucsb.edu/") {
-            await page.goto("https://ucsb.instructure.com/login/saml");
-            await waitForAuth(page, data);
-          }
-          if (page.url() !== "https://ucsb.instructure.com/") {
-            await page.waitForNavigation();
-          }
-          if (page.url() !== "https://ucsb.instructure.com/") {
-            throw new Error("Canvas authentication failed");
-          }
-          logger.log("Processing response");
-          return getCanvasEvents(page);
-        })(await browser.newPage()),
-      ]);
-      const result = {
-        status: Status.OK,
-        data: {ucsbEvents, canvasEvents},
-      } as FunctionResponse<CalendarsData>;
-      logger.log("Returning result", result);
-      return result;
-    } finally {
-      logger.log("Closing browser");
-      await browser.close();
+    logger.log("Getting browser context");
+    const context = await browserContextCache.fetch(params.username);
+    if (!context) {
+      logger.error("Cannot get browser context");
+      return {
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: new Error("Cannot get browser context"),
+      };
     }
+    const userAgent = await getUserAgent();
+    const data: Partial<CalendarsData> = {};
+    keys ??= ["ucsbEvents", "canvasEvents", "gradescopeCourses"];
+    const mutex = new Mutex();
+    await Promise.all(keys.map(async (key) => {
+      switch (key) {
+      case "ucsbEvents": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting UCSB response");
+        const release = await mutex.acquire();
+        await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
+        await waitForAuth(page, params);
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        const response = await fetch("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx", {
+          method: "GET",
+          headers: {
+            "accept": "text/html",
+            "cookie": cookieStr,
+            "user-agent": userAgent,
+          },
+        });
+        logger.log("Processing UCSB response");
+        const jsdom = new JSDOM(await response.text(), {
+          url: response.url,
+        });
+        data.ucsbEvents = getUCSBEvents(jsdom);
+      } break;
+      case "canvasEvents": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting Canvas response");
+        const release = await mutex.acquire();
+        await page.goto("https://ucsb.instructure.com/");
+        if (page.url() === "https://www.canvas.ucsb.edu/") {
+          await page.goto("https://ucsb.instructure.com/login/saml");
+          await waitForAuth(page, params);
+        }
+        if (page.url() !== "https://ucsb.instructure.com/") {
+          await page.waitForNavigation();
+        }
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        logger.log("Processing response");
+        data.canvasEvents = await getCanvasAssignments(userAgent, cookieStr);
+      } break;
+      case "gradescopeCourses": {
+        const page = await context.newPage();
+        const session = await page.createCDPSession();
+        await session.send("Emulation.setFocusEmulationEnabled", {
+          enabled: true,
+        });
+        session.detach().then();
+        logger.log("Getting Gradescope response");
+        const release = await mutex.acquire();
+        await page.goto("https://www.gradescope.com/auth/saml/ucsb");
+        await waitForAuth(page, params);
+        while (page.url() !== "https://www.gradescope.com/") {
+          await page.waitForNavigation();
+        }
+        release();
+        const cookies = await page.cookies();
+        page.close().then();
+        const cookieStr = cookies.map(
+          (cookie) => `${cookie.name}=${cookie.value}`
+        ).join("; ");
+        const response = await fetch("https://www.gradescope.com/", {
+          method: "GET",
+          headers: {
+            "accept": "text/html",
+            "cookie": cookieStr,
+            "user-agent": userAgent,
+          },
+        });
+        const jsdom = new JSDOM(await response.text(), {
+          url: response.url,
+        });
+        const courses = getGradescopeCourses(jsdom);
+        data.gradescopeCourses = await Promise.all(courses.map(async (
+          course
+        ) => {
+          const response = await fetch(course.href, {
+            method: "GET",
+            headers: {
+              "accept": "text/html",
+              "cookie": cookieStr,
+              "user-agent": userAgent,
+            },
+          });
+          const jsdom = new JSDOM(await response.text(), {
+            url: response.url,
+          });
+          return {
+            ...course,
+            assignments: getGradescopeAssignments(jsdom),
+          };
+        }));
+      } break;
+      }
+    }));
+    logger.log("Returning data", data);
+    return {
+      status: Status.OK,
+      data,
+    };
   } catch (error) {
     logger.error(error);
     return {
       status: Status.INTERNAL_SERVER_ERROR,
       error: error,
-    } as FunctionResponse<CalendarsData>;
+    };
   }
 });

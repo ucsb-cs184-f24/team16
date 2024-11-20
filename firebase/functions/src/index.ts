@@ -7,9 +7,6 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {https} from "firebase-functions";
-import {type FunctionResponse, type Quarters, Status} from "./types";
-import {getCurrent, getNext} from "./quarters";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -18,28 +15,7 @@ admin.initializeApp();
 // https://firebase.google.com/docs/functions/typescript
 
 export * from "./calendars";
-
-export const getQuarters =
-    https.onCall<null, Promise<FunctionResponse<Quarters>>>({
-      memory: "128MiB",
-      timeoutSeconds: 10,
-    }, async () => {
-      try {
-        return {
-          status: Status.OK,
-          data: {
-            current: await getCurrent(),
-            next: await getNext(),
-          },
-        } as FunctionResponse<Quarters>;
-      } catch (error) {
-        console.error(error);
-        return {
-          status: Status.INTERNAL_SERVER_ERROR,
-          error: error,
-        } as FunctionResponse<Quarters>;
-      }
-    });
+export * from "./quarters";
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});

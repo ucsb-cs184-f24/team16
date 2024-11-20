@@ -1,7 +1,10 @@
 import type {CalendarsData, Quarters, UCSBSession} from "@/types";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import {TimelineEventProps} from "react-native-calendars";
 import {MarkedDates} from "react-native-calendars/src/types";
+
+dayjs.extend(customParseFormat);
 
 const letterToDay: Record<string, number> = {
   U: 0,
@@ -14,6 +17,8 @@ const letterToDay: Record<string, number> = {
 };
 
 export function processCalendars(data: CalendarsData, quarters: Quarters): [Record<string, TimelineEventProps[]>, MarkedDates] {
+  console.log("processCalendars", data, JSON.stringify(quarters, null, 2));
+  // return [{}, {}];
   const marked: MarkedDates = {};
   const eventsByDate: Record<string, TimelineEventProps[]> = {};
 
@@ -67,7 +72,6 @@ export function processCalendars(data: CalendarsData, quarters: Quarters): [Reco
       console.log("Canvas event", event);
       let start = dayjs(event.start_at);
       let end = dayjs(event.end_at);
-      end = end.hour(end.hour() + 1);
       const dateString1 = start.format("YYYY-MM-DD");
       const dateString2 = end.format("YYYY-MM-DD");
       marked[dateString1] = {
@@ -105,6 +109,46 @@ export function processCalendars(data: CalendarsData, quarters: Quarters): [Reco
       }
     }
   }
+
+  for (const course of data.gradescopeCourses) {
+    for (const assignment of course.assignments) {
+      console.log("Gradescope assignment", assignment);
+      let due = dayjs(assignment.due, "YYYY-MM-DD HH-mm-ss ZZ");
+      const dateString = due.format("YYYY-MM-DD");
+      marked[dateString] = {
+        marked: true
+      };
+      const dateString1 = due.hour(due.hour() - 1).format("YYYY-MM-DD");
+      const dateString2 = due.hour(due.hour() + 1).format("YYYY-MM-DD");
+      if (!eventsByDate[dateString1]) {
+        eventsByDate[dateString1] = [];
+      }
+      if (!eventsByDate[dateString2]) {
+        eventsByDate[dateString2] = [];
+      }
+
+      const event: TimelineEventProps = {
+        start: due.format("YYYY-MM-DD HH:mm:ss"),
+        end: due.format("YYYY-MM-DD HH:mm:ss"),
+        title: assignment.name,
+        summary: assignment.href,
+        color: "#0096FF"
+      };
+      eventsByDate[dateString1].push({
+        ...event,
+        date: dateString1
+      });
+      if (dateString1 !== dateString2) {
+        console.log("Duplicating event", event);
+        eventsByDate[dateString2].push({
+          ...event,
+          date: dateString2
+        });
+      }
+    }
+  }
+
+  console.log("eventsByDate", eventsByDate);
 
   return [eventsByDate, marked];
 }
