@@ -64,11 +64,11 @@ async function waitForAuth(
 
 export const getCalendars = https.onCall<
   RequestData<Credentials | null, CalendarsData>,
-  Promise<ResponseData<CalendarsData>>
+  Promise<ResponseData<Partial<CalendarsData>>>
 >({
   memory: "2GiB",
   timeoutSeconds: 120,
-}, async ({data: {params, keys}}): Promise<ResponseData<CalendarsData>> => {
+}, async ({data: {params, keys}}) => {
   logger.log("params:", params);
   if (!params) {
     logger.log("Not signed in");

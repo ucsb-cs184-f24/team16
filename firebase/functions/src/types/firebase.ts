@@ -18,9 +18,9 @@ export interface RequestData<Params = unknown, Data = unknown> {
   keys?: (keyof Data)[];
 }
 
-export type ResponseData<T> = {
+export type ResponseData<Data = unknown> = {
   status: Status.OK;
-  data: Partial<T>
+  data: Data;
 } | {
   status: Exclude<Status, Status.OK>;
   error: unknown;
