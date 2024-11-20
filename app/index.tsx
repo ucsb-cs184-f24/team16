@@ -1,8 +1,8 @@
-import {Button, StyleSheet, View, Text} from 'react-native';
+import {Button, StyleSheet, View, Text, Alert} from 'react-native';
 import Schedule from '@/components/Schedule';
 import {router} from "expo-router";
 import {getCalendars, getQuarters} from "@/helpers/firebase";
-import useFirebaseFunction from "@/hooks/useFirebaseFunction";
+import {useFirebaseFunction, useFirebaseFunction2} from "@/hooks/useFirebaseFunction";
 import SignIn from "@/components/SignIn";
 import useCredentials from "@/hooks/useCredentials";
 import {useEffect, useState} from "react";
@@ -12,7 +12,7 @@ import type {MarkedDates} from "react-native-calendars/src/types";
 
 export default function Index() {
   const [credentials, setCredentials] = useCredentials();
-  const calendars = useFirebaseFunction({
+  const calendars = useFirebaseFunction2({
     caches: {
       ucsbEvents: {
         key: "calendars.ucsbEvents",
@@ -32,6 +32,7 @@ export default function Index() {
     condition: calendars => !!credentials && (
         !calendars?.gradescopeCourses || !calendars?.canvasEvents || !calendars?.ucsbEvents
     ),
+    onFetch: () => Alert.alert("Calendars need to update", "You may need to answer a Duo prompt."),
     onFail: () => setCredentials(null),
   });
   const quarters = useFirebaseFunction({
@@ -46,16 +47,12 @@ export default function Index() {
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});
   useEffect(() => {
-    if (calendars &&
-        calendars.gradescopeCourses &&
-        calendars.canvasEvents &&
-        calendars.ucsbEvents &&
-        quarters) {
+    if (calendars && quarters) {
       const [eventsByDate, marked] = processCalendars(calendars, quarters);
       setEventsByDate(eventsByDate);
       setMarked(marked);
     }
-  }, [calendars?.gradescopeCourses, calendars?.canvasEvents, calendars?.ucsbEvents, quarters, calendars]);
+  }, [calendars, calendars?.gradescopeCourses, calendars?.canvasEvents, calendars?.ucsbEvents, quarters]);
 
   return credentials ? (
       <View
@@ -65,10 +62,7 @@ export default function Index() {
             title="Check My Quarter"
             onPress={() => router.navigate('/quarter-screen')}
         />
-        {calendars &&
-        calendars.gradescopeCourses &&
-        calendars.canvasEvents &&
-        calendars.ucsbEvents ? (
+        {calendars ? (
             <Schedule
                 eventsByDate={eventsByDate}
                 marked={marked}
@@ -76,7 +70,6 @@ export default function Index() {
         ) : (
             <>
               <Text>Loading...</Text>
-              <Text>You may need to answer a Duo prompt.</Text>
             </>
         )}
 

@@ -4,7 +4,7 @@ import {getQuarters} from "@/helpers/firebase";
 import {Quarters} from "@/types";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import useFirebaseFunction from "@/hooks/useFirebaseFunction";
+import {useFirebaseFunction} from "@/hooks/useFirebaseFunction";
 
 dayjs.extend(customParseFormat);
 
