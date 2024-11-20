@@ -32,7 +32,11 @@ export default function Index() {
     condition: calendars => !!credentials && (
         !calendars?.gradescopeCourses || !calendars?.canvasEvents || !calendars?.ucsbEvents
     ),
-    onFetch: () => Alert.alert("Calendars need to update", "You may need to answer a Duo prompt."),
+    onFetch: (keys) => {
+      if ("ucsbEvents" in keys) {
+        Alert.alert("Courses need to update", "You may need to answer a Duo prompt.");
+      }
+    },
     onFail: () => setCredentials(null),
   });
   const quarters = useFirebaseFunction({

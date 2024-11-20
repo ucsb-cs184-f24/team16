@@ -164,7 +164,7 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
       callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Partial<Data>>>;
       params: Params | Promise<Params> | (() => Params | Promise<Params>),
       condition?: (data: Partial<Data> | null) => boolean | Promise<boolean>,
-      onFetch?: () => void
+      onFetch?: (keys: (keyof Data)[]) => void
       onFail?: () => void
     }): Partial<Data> | null {
   const [data, setData] = useState<Partial<Data> | null>(null);
@@ -200,7 +200,7 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
             params: await (params instanceof Function ? params() : params),
             keys: keys
           };
-          onFetch();
+          onFetch(keys);
           await firebaseFunctionHelper(callable, requestData, async newData => {
             setData(Object.assign(data, newData));
             const now = dayjs().unix().toString();
