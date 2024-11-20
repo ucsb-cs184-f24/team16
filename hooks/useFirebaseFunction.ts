@@ -34,10 +34,10 @@ interface CacheParams {
   duration?: Duration;
 }
 
-async function firebaseFunctionHelper<Params = unknown, Data = unknown>(
-    callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Partial<Data>>>,
+async function firebaseFunctionHelper<Params = unknown, Data = unknown, T extends Partial<Data> = Data>(
+    callable: HttpsCallable<RequestData<Params, Data>, ResponseData<T>>,
     requestData: RequestData<Params, Data>,
-    onSuccess: (data: Partial<Data>) => void,
+    onSuccess: (data: T) => void,
     onFail: () => void,
     release: () => void,
 ) {
@@ -68,31 +68,28 @@ async function firebaseFunctionHelper<Params = unknown, Data = unknown>(
 async function isCacheValid(cache: CacheParams): Promise<boolean> {
   if (cache.duration) {
     const ctimeStr = await AsyncStorage.getItem(`${cache}/ctime`);
-    return !!ctimeStr && addDuration(dayjs(ctimeStr), cache.duration).diff(dayjs()) >= 0;
+    return !!ctimeStr && addDuration(dayjs.unix(parseInt(ctimeStr)), cache.duration).diff(dayjs()) >= 0;
   } else {
     return true;
   }
 }
 
-export default function useFirebaseFunction<Params = unknown, Data = unknown>(
+export function useFirebaseFunction<Params = unknown, Data = unknown>(
     {
       cache,
-      caches,
       tries = 5,
       callable,
       params,
-      condition = caches
-          ? data => !data || !Array.every(Object.keys(caches), key => Object.hasOwn(data, key))
-          : data => !data,
-      onFail = () => {
-      }
+      condition = (data: Data | null) => !data,
+      onFetch = () => {},
+      onFail = () => {}
     }: {
       cache?: CacheParams;
-      caches?: Record<keyof Data, CacheParams>;
       tries?: number;
-      callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Partial<Data>>>;
+      callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Data>>;
       params: Params | Promise<Params> | (() => Params | Promise<Params>),
       condition?: (data: Data | null) => boolean | Promise<boolean>,
+      onFetch?: () => void,
       onFail?: () => void
     }): Data | null {
   const [data, setData] = useState<Data | null>(null);
@@ -105,69 +102,40 @@ export default function useFirebaseFunction<Params = unknown, Data = unknown>(
     mutexRef.current.acquire().then(async release => {
       if (triesRef.current < tries && await condition(data)) {
         if (cache) {
-          if (await isCacheValid(cache)) {
-            const cachedStr = await AsyncStorage.getItem(cache.key);
-            const cached: Data | null = JSON.parse(cachedStr ?? "null");
-            if (cached) {
-              console.log("firebase function", callable, "loading cached", cached);
-              setData(cached);
+          const cachedStr = await AsyncStorage.getItem(cache.key);
+          const cached: Data | null = JSON.parse(cachedStr ?? "null");
+          if (cached) {
+            console.log("firebase function", callable, "loading cached", cached);
+            setData(cached);
+            if (await isCacheValid(cache)) {
+              console.log("firebase function", callable, "cache is valid");
               release();
               return;
+            } else {
+              console.log("firebase function", callable, "cache is invalid");
             }
           }
           const requestData: RequestData<Params, Data> = {
             params: await (params instanceof Function ? params() : params)
           };
+          onFetch();
           await firebaseFunctionHelper(callable, requestData, async data => {
-            setData(data as Data);
+            setData(data);
             await AsyncStorage.multiSet([
               [cache.key, JSON.stringify(data)],
-              [`${cache}/ctime`, dayjs().toISOString()]
+              [`${cache}/ctime`, dayjs().unix().toString()]
             ]);
           }, () => {
             onFail();
             triesRef.current++;
           }, release);
-        } else if (caches) {
-          let data: Partial<Data> = {};
-          const keys = (await Promise.all(Object.entries<CacheParams>(caches).map(async ([key, cache]) => {
-            if (await isCacheValid(cache)) {
-              const cachedStr = await AsyncStorage.getItem(cache.key);
-              const cached: any | null = JSON.parse(cachedStr ?? "null");
-              if (cached) {
-                console.log("firebase function", callable, "loading cached", cached);
-                Object.assign(data, {[key]: cached});
-                return false;
-              }
-            }
-            return key;
-          }, []))).filter(key => typeof key === "string") as (keyof Data)[];
-          if (keys.length > 0) {
-            const requestData: RequestData<Params, Data> = {
-              params: await (params instanceof Function ? params() : params),
-              keys: keys
-            };
-            await firebaseFunctionHelper(callable, requestData, async newData => {
-              setData(Object.assign(data, newData) as Data);
-              const now = dayjs().toISOString();
-              await AsyncStorage.multiSet(keys.flatMap(key => [
-                [caches[key].key, JSON.stringify(data[key])],
-                [`${caches[key].key}/ctime`, now]
-              ]));
-            }, () => {
-              onFail();
-              triesRef.current++;
-            }, release);
-          } else {
-            setData(data as Data);
-            release();
-          }
         } else {
           const requestData: RequestData<Params, Data> = {
             params: await (params instanceof Function ? params() : params)
           };
+          onFetch();
           await firebaseFunctionHelper(callable, requestData, data => {
-            setData(data as Data);
+            setData(data);
           }, () => {
             onFail();
             triesRef.current++;
@@ -177,6 +145,78 @@ export default function useFirebaseFunction<Params = unknown, Data = unknown>(
         release();
       }
     });
-  }, [cache, caches, callable, condition, data, onFail, params, tries]);
+  }, [cache, callable, condition, data, onFail, onFetch, params, tries]);
+  return data;
+}
+
+export function useFirebaseFunction2<Params = unknown, Data = unknown>(
+    {
+      caches,
+      tries = 5,
+      callable,
+      params,
+      condition = (data: Partial<Data> | null) => !data || !Array.every(Object.keys(caches), key => Object.hasOwn(data, key)),
+      onFetch = () => {},
+      onFail = () => {}
+    }: {
+      caches: Record<keyof Data, CacheParams>;
+      tries?: number;
+      callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Partial<Data>>>;
+      params: Params | Promise<Params> | (() => Params | Promise<Params>),
+      condition?: (data: Partial<Data> | null) => boolean | Promise<boolean>,
+      onFetch?: (keys: (keyof Data)[]) => void
+      onFail?: () => void
+    }): Partial<Data> | null {
+  const [data, setData] = useState<Partial<Data> | null>(null);
+  const mutexRef = useRef<Mutex | null>(null);
+  const triesRef = useRef<number>(0);
+  useEffect(() => {
+    if (!mutexRef.current) {
+      mutexRef.current = new Mutex();
+    }
+    mutexRef.current.acquire().then(async release => {
+      if (triesRef.current < tries && await condition(data)) {
+        let data: Partial<Data> = {};
+        const keys = (await Promise.all(Object.entries<CacheParams>(caches).map(async ([key, cache]) => {
+          const cachedStr = await AsyncStorage.getItem(cache.key);
+          const cached: any | null = JSON.parse(cachedStr ?? "null");
+          if (cached) {
+            console.log("firebase function", callable, "loading cached", cached, "for", key);
+            Object.assign(data, {[key]: cached});
+            if (await isCacheValid(cache)) {
+              console.log("firebase function", callable, "cache is valid", cached, "for", key);
+              return false;
+            } else {
+              console.log("firebase function", callable, "cache is invalid");
+            }
+          }
+          return key;
+        }, []))).filter(key => typeof key === "string") as (keyof Data)[];
+        if (Object.keys(data).length) {
+          setData(data);
+        }
+        if (keys.length > 0) {
+          const requestData: RequestData<Params, Data> = {
+            params: await (params instanceof Function ? params() : params),
+            keys: keys
+          };
+          onFetch(keys);
+          await firebaseFunctionHelper(callable, requestData, async newData => {
+            setData(Object.assign(data, newData));
+            const now = dayjs().unix().toString();
+            await AsyncStorage.multiSet(keys.flatMap(key => [
+              [caches[key].key, JSON.stringify(data[key])],
+              [`${caches[key].key}/ctime`, now]
+            ]));
+          }, () => {
+            onFail();
+            triesRef.current++;
+          }, release);
+        }
+      } else {
+        release();
+      }
+    });
+  }, [caches, callable, condition, data, onFail, onFetch, params, tries]);
   return data;
 }

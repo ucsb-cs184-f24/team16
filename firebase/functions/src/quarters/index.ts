@@ -8,7 +8,10 @@ import {
 import {getCurrent, getNext} from "./quarters";
 
 export const getQuarters =
-    https.onCall<RequestData<null, Quarters>, Promise<ResponseData<Quarters>>>({
+    https.onCall<
+      RequestData<null, Quarters>,
+      Promise<ResponseData<Partial<Quarters>>>
+    >({
       memory: "256MiB",
       timeoutSeconds: 10,
     }, async ({data: {keys}}) => {
