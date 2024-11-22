@@ -5,8 +5,8 @@
 ### Explanation
 
 # Team Decisions
-1. Calendar combinning course times, assignments (based on due date) and personal events
-2. Use API calls (UCSB, Canvas, Gradescope) and get responses
+1. Calendar combining course times, assignments (based on due date) and personal events
+2. Use [Puppeteer](https://pptr.dev/) to retrieve data from UCSB, Canvas, and Gradescope
 
 # User Experience (UX) 
 ## User Flow
