@@ -1,26 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet , FlatList, Alert} from 'react-native';
-import {Index} from './index'
-import {getCanvasEvents, getQuarter, getUCSBEvents, Quarter, UCSBEvents} from '@/helpers/api';
+import {useEffect, useState} from 'react';
+import {FlatList, StyleSheet, Text, View} from 'react-native';
+import {getQuarters} from "@/helpers/firebase";
+import {Quarters} from "@/types";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import {useFirebaseFunction} from "@/hooks/useFirebaseFunction";
 
-type QuarterState = {
-    Year: string;
-    Category: string;
-    ClassState: string;
-    PassState: string;
+dayjs.extend(customParseFormat);
+
+interface QuarterState {
+  Year: string;
+  Category: string;
+  ClassState: string;
+  PassState: string;
 }
 
-const parseQuarterData = (data: Record<string, any>): QuarterState => {
-  const currentDate = new Date();
+const parseQuarterData = (quarters: Quarters): QuarterState => {
+  const currentDate = dayjs();
 
-  const firstDayOfClasses = new Date(data.firstDayOfClasses);
-  const lastDayOfClasses = new Date(data.lastDayOfClasses);
-  const firstDayOfFinals = new Date(data.firstDayOfFinals);
-  const lastDayOfFinals = new Date(data.lastDayOfFinals);
-  const pass1Begin = new Date(data.pass1Begin);
-  const pass2Begin = new Date(data.pass2Begin);
-  const pass3Begin = new Date(data.pass3Begin);
-  const lastDay2Add = new Date(data.lastDayToAddUnderGrad);
+  const firstDayOfClasses = dayjs(quarters.current.firstDayOfClasses);
+  const lastDayOfClasses = dayjs(quarters.current.lastDayOfClasses);
+  const firstDayOfFinals = dayjs(quarters.current.firstDayOfFinals);
+  const lastDayOfFinals = dayjs(quarters.current.lastDayOfFinals);
+  const pass1Begin = dayjs(quarters.next.pass1Begin);
+  const pass2Begin = dayjs(quarters.next.pass2Begin);
+  const pass3Begin = dayjs(quarters.next.pass3Begin);
+  const lastDay2Add = dayjs(quarters.next.lastDayToAddUnderGrad);
 
   let classState: string = "Not in Class";
   let passState: string = "No pass info"
@@ -31,67 +36,65 @@ const parseQuarterData = (data: Record<string, any>): QuarterState => {
     classState = "Taking Finals";
   }
 
-  if (currentDate >= pass1Begin && currentDate <= pass2Begin){
-      passState = "You are at Pass 1";
-  }else if(currentDate >= pass2Begin && currentDate <= pass3Begin){
-      passState = "You are at Pass 2";
-  }else if(currentDate >= pass3Begin && currentDate <= lastDay2Add){
-      passState = "You are at Pass 3";
-  }else{
-      passState = "You are not in any passes";
+  if (currentDate >= pass1Begin && currentDate <= pass2Begin) {
+    passState = "You are at Pass 1";
+  } else if (currentDate >= pass2Begin && currentDate <= pass3Begin) {
+    passState = "You are at Pass 2";
+  } else if (currentDate >= pass3Begin && currentDate <= lastDay2Add) {
+    passState = "You are at Pass 3";
+  } else {
+    passState = "You are not in any passes";
   }
 
   return {
-    Year: data.academicYear,
-    Category: data.category,
+    Year: quarters.current.academicYear,
+    Category: quarters.current.category,
     ClassState: classState,
     PassState: passState
   };
 };
 
-const quarter_screen: React.FC = () => {
+export default function QuarterScreen() {
 
-    const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
+  const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
+  const quarters = useFirebaseFunction({
+    cache: {
+      key: "quarters",
+      duration: {days: 1}
+    },
+    callable: getQuarters,
+    params: null,
+  });
+  useEffect(() => {
+    if (quarters) {
+      setQuarterState(parseQuarterData(quarters));
+    }
+  }, [quarters]);
 
-      useEffect(() => {
-        const fetchData = async () => {
-          try {
-            const result = await getQuarter();
-            const parsedData = parseQuarterData(result);
-            setQuarterState(parsedData);
-          } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "Failed to fetch quarter data.");
-          }
-        };
-
-        fetchData();
-      }, []);
-
-      if (!quarterState) {
-        return (
-          <View style={styles.container}>
-            <Text style={styles.loadingText}>Loading...</Text>
-          </View>
-        );
-      }
-
-      return (
+  if (!quarterState) {
+    return (
         <View style={styles.container}>
-          <Text style={styles.title}>Quarter Information</Text>
-          <FlatList
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+    );
+  }
+
+  return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Quarter Information</Text>
+        <FlatList
             data={Object.entries(quarterState)}
             keyExtractor={item => item[0]}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Text style={styles.cellTitle}>{item[0]}</Text>
-                <Text style={styles.cellValue}>{item[1]}</Text>
-              </View>
+            renderItem={({item}) => (
+                <View style={styles.row}>
+                  <Text style={styles.cellTitle}>{item[0]}</Text>
+                  <Text style={styles.cellValue}>{item[1]}</Text>
+                </View>
             )}
             contentContainerStyle={styles.listContent}
-          />
-        </View>
-      );
+        />
+      </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -148,5 +151,3 @@ const styles = StyleSheet.create({
     textAlign: 'right', // Align values to the right
   },
 });
-
-export default quarter_screen;
