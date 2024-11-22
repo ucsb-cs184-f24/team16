@@ -1,6 +1,7 @@
 # System Architecture
 ## Diagram
-![diagram](https://github.com/user-attachments/assets/2efede17-fcd0-4bb8-b99e-a63a1a901ff9)
+![diagram updated](https://github.com/user-attachments/assets/e26719e1-6d8a-4b1d-85df-5a2c43caa252)
+
 ### Explanation
 
 # Team Decisions
