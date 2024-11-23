@@ -7,3 +7,5 @@ Also, the bug inside quarter info page has been fixed
 
 ## Bugs:
 
+1.  User can still see current quarter info even if they input wrong id/psw
+2.  Login would timeout
