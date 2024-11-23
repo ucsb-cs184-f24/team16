@@ -1,4 +1,5 @@
 # System Architecture
+
 ## Diagram
 ![diagram updated](https://github.com/user-attachments/assets/e26719e1-6d8a-4b1d-85df-5a2c43caa252)
 
@@ -9,6 +10,7 @@
 2. Use [Puppeteer](https://pptr.dev/) to retrieve data from UCSB, Canvas, and Gradescope
 
 # User Experience (UX) 
+
 ## User Flow
 1. Entry
 2. Log in through Firebase auth
