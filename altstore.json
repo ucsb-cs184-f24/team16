@@ -16,6 +16,12 @@
       "iconURL": "https://raw.githubusercontent.com/ucsb-cs184-f24/team16/refs/heads/main/img/logo.png",
       "versions": [
         {
+          "version": "1.1.0",
+          "date": "",
+          "size": 0,
+          "downloadURL": "https://github.com/ucsb-cs184-f24/team16/releases/download/v1.1.0/team16-1.1.0.ipa"
+        },
+        {
           "version": "1.0.1",
           "date": "2024-11-04T07:52:52Z",
           "size": 12691131,
