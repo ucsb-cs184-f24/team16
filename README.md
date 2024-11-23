@@ -57,7 +57,7 @@ If you don't want to go to the trouble of manually downloading the `.ipa` file, 
 tab of the Altstore app and add this source:
 
 ```
-https://raw.githubusercontent.com/ucsb-cs184-f24/team16/refs/heads/main/altstore.json
+https://cdn.jsdelivr.net/gh/ucsb-cs184-f24/team16@main/altstore.json
 ```
 
 Then, you can install the app directly from the team16 source.
