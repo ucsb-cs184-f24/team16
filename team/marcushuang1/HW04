@@ -1,1 +1,3 @@
-s
+## Overview
+
+This contribution enhances the layout of the application by adding a top bar navigation component to the `layout.tsx` file located in the `App` folder. The `TopBar` improves user experience by providing easy navigation between key pages of the application, making it consistent across all views.
