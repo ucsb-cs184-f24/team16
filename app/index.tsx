@@ -62,10 +62,10 @@ export default function Index() {
       <View
           style={styles.container}>
 
-        <Button
+        {/* <Button
             title="Check My Quarter"
             onPress={() => router.navigate('/quarter-screen')}
-        />
+        /> */}
         {calendars ? (
             <Schedule
                 eventsByDate={eventsByDate}
