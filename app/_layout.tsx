@@ -1,7 +1,50 @@
 import { Stack } from 'expo-router';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { NavigationContainer } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and plus sign
-import HamburgerScreen from './hamburger';
+
+const Drawer = createDrawerNavigator();
+
+function SidebarContent(props) {
+  return (
+    <View style={styles.sidebar}>
+      <Text style={styles.username}>{"<UserName>"}</Text>
+
+      {/* Filters */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Filters</Text>
+        <TouchableOpacity>
+          <Text>📘 Courses</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text>📆 Canvas events</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text>📝 Gradescope events</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text>📅 My events</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Other Options */}
+      <TouchableOpacity style={styles.item}>
+        <Text>📤 Export Calendar</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Text>ℹ️ Quarter Info</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Text>⚙️ Settings</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Text>🚪 Log Out</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 
 export default function RootLayout() {
   return (
@@ -11,7 +54,7 @@ export default function RootLayout() {
         options={({ navigation }) => ({
           title: 'Home',
           headerLeft: () => (
-            <TouchableOpacity onPress={() => navigation.navigate('hamburger')}>
+            <TouchableOpacity onPress={() => console.log('Hamburger bar pressed')}>
               <Ionicons name="menu" size={26} color="black" />
             </TouchableOpacity>
           ),
@@ -29,7 +72,6 @@ export default function RootLayout() {
           },
         })}
       />
-      <Stack.Screen name="hamburger"/>
         <Stack.Screen name="event-info"/>
         <Stack.Screen name="quarter-screen"/>
       </Stack>
