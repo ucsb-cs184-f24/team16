@@ -35,29 +35,46 @@ async function waitForAuth(
       () => true
     )
   ) {
-    if (await page.$("#duo_iframe").then(
-      (e) => !!e,
-      () => false
-    )) {
-      logger.log("Waiting for Duo authentication");
-      await page.waitForNavigation({
-        timeout: 60000,
-      });
-      break;
-    } else if (await page.$("form[action=\"login\"]").then(
-      (e) => !!e,
-      () => false
-    )) {
-      logger.log("Entering credentials");
-      await page.locator(
-        "form[action=\"login\"] input[name=\"username\"]"
-      ).fill(credentials.username);
-      await page.locator(
-        "form[action=\"login\"] input[name=\"password\"]"
-      ).fill(credentials.password);
-      await page.locator(
-        "form[action=\"login\"] input[name=\"submit\"]"
-      ).click();
+    try {
+      const iframe = await page.$("iframe#duo_iframe");
+      const form = await page.$("form[action=\"login\"]");
+      if (iframe) {
+        const frame = await iframe.contentFrame();
+        const buttons = await frame.$$(
+          "#auth_methods .push-label button[type=submit]:not([disabled])"
+        );
+        if (buttons.length) {
+          logger.log("Waiting for Duo authentication");
+          await Promise.all(buttons.map(async (button) => button.click()));
+          await page.waitForNavigation({
+            timeout: 60000,
+          });
+          break;
+        }
+      } else if (form) {
+        logger.log("Entering credentials");
+        const username = await form.$("input[name=\"username\"]");
+        const password = await form.$("input[name=\"password\"]");
+        const submit = await form.$("input[name=\"submit\"]");
+        await username?.evaluate(
+          (e, username) => e.value = username,
+          credentials.username
+        );
+        await password?.evaluate(
+          (e, password) => e.value = password,
+          credentials.password
+        );
+        await submit?.evaluate(
+          (e) => {
+            e.disabled = false;
+            e.click();
+          }
+        );
+        await submit?.click();
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    } catch (_) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 }
