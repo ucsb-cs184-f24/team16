@@ -2,51 +2,50 @@ import { Stack } from 'expo-router';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
-import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and plus sign
+import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and plus 
 
+import SideMenu from '@rexovolt/react-native-side-menu';
+import HamburgerScreen from './hamburger';
+
+import DrawerItems from '@/constants/DrawerItems';
+// const Drawer = createDrawerNavigator();
 const Drawer = createDrawerNavigator();
 
-function SidebarContent(props) {
+const CustomDrawerContent = ({ navigation }) => (
+  <View style={{ flex: 1, padding: 20 }}>
+    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Menu</Text>
+    <TouchableOpacity onPress={() => navigation.navigate('index')}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Home</Text>
+    </TouchableOpacity>
+    <TouchableOpacity onPress={() => navigation.navigate('event-info')}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Event Info</Text>
+    </TouchableOpacity>
+    <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Quarter Screen</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+export default function RootLayout() {
   return (
-    <View style={styles.sidebar}>
-      <Text style={styles.username}>{"<UserName>"}</Text>
-
-      {/* Filters */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Filters</Text>
-        <TouchableOpacity>
-          <Text>📘 Courses</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text>📆 Canvas events</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text>📝 Gradescope events</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text>📅 My events</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Other Options */}
-      <TouchableOpacity style={styles.item}>
-        <Text>📤 Export Calendar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Text>ℹ️ Quarter Info</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Text>⚙️ Settings</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Text>🚪 Log Out</Text>
-      </TouchableOpacity>
-    </View>
+      <Drawer.Navigator
+        drawerContent={(props) => <CustomDrawerContent {...props} />} // Custom Drawer
+        screenOptions={{
+          drawerStyle: {
+            backgroundColor: '#D3E1FB', // Optional: Customize drawer background
+            width: 250, // Set drawer width
+          },
+          headerShown: false, // Hide default header since we use Stack headers
+        }}
+      >
+        {/* Main Stack Navigator */}
+        <Drawer.Screen name="index" component={MainStackNavigator} />
+      </Drawer.Navigator>
   );
 }
 
+function MainStackNavigator() {
 
-export default function RootLayout() {
   return (
       <Stack>
        <Stack.Screen
@@ -54,7 +53,7 @@ export default function RootLayout() {
         options={({ navigation }) => ({
           title: 'Home',
           headerLeft: () => (
-            <TouchableOpacity onPress={() => console.log('Hamburger bar pressed')}>
+            <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
               <Ionicons name="menu" size={26} color="black" />
             </TouchableOpacity>
           ),
@@ -74,6 +73,6 @@ export default function RootLayout() {
       />
         <Stack.Screen name="event-info"/>
         <Stack.Screen name="quarter-screen"/>
-      </Stack>
+      // </Stack>
   );
 }
