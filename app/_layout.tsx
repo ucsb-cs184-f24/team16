@@ -12,16 +12,25 @@ import DrawerItems from '@/constants/DrawerItems';
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerContent = ({ navigation }) => (
-  <View style={{ flex: 1, padding: 20 }}>
-    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Menu</Text>
-    <TouchableOpacity onPress={() => navigation.navigate('index')}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Home</Text>
+  <View style={{ flex: 1, padding: 30 }}>
+    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Username</Text>
+
+    <Text style={{ fontSize: 16, marginVertical: 10 }}>Filter</Text>
+
+    <TouchableOpacity onPress={() => console.log("export your calendar")}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Export Calendar</Text>
     </TouchableOpacity>
-    <TouchableOpacity onPress={() => navigation.navigate('event-info')}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Event Info</Text>
-    </TouchableOpacity>
+
     <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Quarter Screen</Text>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Quarter Info</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => console.log("go to settings")}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Settings</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => console.log("user logging out")}>
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>Log out</Text>
     </TouchableOpacity>
   </View>
 );
