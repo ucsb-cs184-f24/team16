@@ -13,24 +13,49 @@ const Drawer = createDrawerNavigator();
 
 const CustomDrawerContent = ({ navigation }) => (
   <View style={{ flex: 1, padding: 30 }}>
-    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Username</Text>
+    <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 20 }}>Username</Text>
 
-    <Text style={{ fontSize: 16, marginVertical: 10 }}>Filter</Text>
-
+    {/* Filters */}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Ionicons name="funnel-outline" size={26} color="black" />
+        <Text style={{ fontSize: 16, marginLeft: 8 }}>Filter</Text>
+      </View>
+      <TouchableOpacity onPress={() => console.log("filtering")}>
+        <Ionicons name="chevron-down-outline" size={26} color="black"/>
+      </TouchableOpacity>
+    </View>
+    
+    {/* Export Calendar */}
     <TouchableOpacity onPress={() => console.log("export your calendar")}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Export Calendar</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15}}>
+        <Ionicons name="download-outline" size={26} color="black" />
+        <Text style={{ fontSize: 16, marginLeft: 8 }}>Export Calendar</Text>
+      </View>
     </TouchableOpacity>
 
+    {/* Quarter Info */}
     <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Quarter Info</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15}}>
+        <Ionicons name="information-circle-outline" size={26} color="black" />
+        <Text style={{ fontSize: 16, marginLeft: 8 }}>Quarter Info</Text>
+      </View>
     </TouchableOpacity>
 
-    <TouchableOpacity onPress={() => console.log("go to settings")}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Settings</Text>
+     {/* Settings */}
+     <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
+     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15}}>
+        <Ionicons name="settings-outline" size={26} color="black" />
+        <Text style={{ fontSize: 16, marginLeft: 8 }}>Settings</Text>
+      </View>
     </TouchableOpacity>
 
-    <TouchableOpacity onPress={() => console.log("user logging out")}>
-      <Text style={{ fontSize: 16, marginVertical: 10 }}>Log out</Text>
+    {/* Log out */}
+    <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
+     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15}}>
+        <Ionicons name="log-out-outline" size={26} color="black" />
+        <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>
+      </View>
     </TouchableOpacity>
   </View>
 );
@@ -41,13 +66,12 @@ export default function RootLayout() {
         drawerContent={(props) => <CustomDrawerContent {...props} />} // Custom Drawer
         screenOptions={{
           drawerStyle: {
-            backgroundColor: '#D3E1FB', // Optional: Customize drawer background
-            width: 250, // Set drawer width
+            backgroundColor: 'white', // Optional: Customize drawer background
+            width: 300, // Set drawer width
           },
           headerShown: false, // Hide default header since we use Stack headers
         }}
       >
-        {/* Main Stack Navigator */}
         <Drawer.Screen name="index" component={MainStackNavigator} />
       </Drawer.Navigator>
   );
@@ -81,7 +105,14 @@ function MainStackNavigator() {
         })}
       />
         <Stack.Screen name="event-info"/>
-        <Stack.Screen name="quarter-screen"/>
+        <Stack.Screen name="quarter-screen"
+        options = {({ navigation }) => ({
+          title: 'Quarter Info',
+          headerTitleAlign: 'left',
+          headerTitle: () => (
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Quarter Info</Text>
+          ),
+        })}/>
       // </Stack>
   );
 }
