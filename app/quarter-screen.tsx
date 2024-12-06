@@ -1,10 +1,9 @@
 import {useEffect, useState} from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
-import {getQuarters} from "@/helpers/firebase";
 import {Quarters} from "@/types";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import {useFirebaseFunction} from "@/hooks/useFirebaseFunction";
+import useQuarters from "@/hooks/useQuarters";
 
 dayjs.extend(customParseFormat);
 
@@ -57,15 +56,7 @@ const parseQuarterData = (quarters: Quarters): QuarterState => {
 export default function QuarterScreen() {
 
   const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
-  const quarters = useFirebaseFunction({
-    key: "quarters",
-    cache: {
-      key: "quarters",
-      duration: {days: 1}
-    },
-    callable: getQuarters,
-    params: null,
-  });
+  const quarters = useQuarters();
   useEffect(() => {
     if (quarters) {
       setQuarterState(parseQuarterData(quarters));
