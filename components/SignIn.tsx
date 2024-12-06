@@ -1,14 +1,10 @@
 import {Button, StyleSheet, TextInput, View} from "react-native";
 import {useState} from "react";
 import {ThemedText} from "@/components/ThemedText";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type {Credentials} from "@/types/firebase";
+import {setValue} from "@/helpers/storage";
 
-interface SignInProps {
-  callback?: (credentials: Credentials) => void;
-}
-
-export default function SignIn({callback}: SignInProps) {
+export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   return (
@@ -33,11 +29,9 @@ export default function SignIn({callback}: SignInProps) {
         <Button title="Sign In"
                 onPress={async () => {
                   const credentials: Credentials = {username, password};
-                  await AsyncStorage.setItem("credentials", JSON.stringify(credentials));
-                  if (callback) {
-                    callback(credentials);
-                  }
-                }}/>
+                  setValue("credentials", credentials);
+                }}
+        />
       </View>
   );
 }
