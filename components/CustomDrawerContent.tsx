@@ -3,6 +3,8 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
 import {router} from 'expo-router';
+import {Credentials} from "@/types/firebase";
+import useValue from '@/hooks/useValue';
 
 interface SelectedFilters {
   courses: boolean;
@@ -13,6 +15,7 @@ interface SelectedFilters {
 
 export default function CustomDrawerContent() {
 
+  const [getCredentials] = useValue<Credentials>("credentials");
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
   const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
     courses: false,
@@ -30,7 +33,7 @@ export default function CustomDrawerContent() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.username}>"Username"</Text>
+      <Text style={styles.username}>{getCredentials()?.username ?? ""}</Text>
 
       {/* Divider */}
       <View style={styles.divider} />

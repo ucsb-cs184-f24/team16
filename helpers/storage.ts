@@ -28,7 +28,6 @@ function getMutex(key: string): Mutex {
 
 export async function loadValue<T>(key: string, persist: boolean = true): Promise<T | null> {
   const release = await getMutex(key).acquire();
-  console.error("Storage", Object.keys(storage));
   try {
     if (!(key in storage)) {
       const result = persist ? await AsyncStorage.getItem(key) : null;
@@ -56,6 +55,11 @@ export function getValue<T>(key: string, defaultValue?: T): T | null {
 export function setValue<T>(key: string, value: T | null, persist: boolean = true): boolean {
   if (!(key in storage)) {
     storage[key] = {value, listeners: {}};
+    if (persist) {
+      getMutex(key).acquire().then(
+        release => AsyncStorage.setItem(key, JSON.stringify(value)).then(release, release)
+      );
+    }
     return true;
   } else {
     const oldValue = storage[key].value;
