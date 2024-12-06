@@ -25,7 +25,6 @@ export default function RootLayout() {
 }
 
 function MainStackNavigator() {
-
   return (
       <Stack>
        <Stack.Screen
@@ -53,13 +52,14 @@ function MainStackNavigator() {
       />
         <Stack.Screen name="event-info"/>
         <Stack.Screen name="quarter-screen"
-        options = {({ navigation }) => ({
-          title: 'Quarter Info',
-          headerTitleAlign: 'left',
-          headerTitle: () => (
-            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Quarter Info</Text>
-          ),
-        })}/>
+          options={{
+            title: 'Quarter Info',
+            headerTitleAlign: 'left',
+            headerTitle: () => (
+              <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Quarter Info</Text>
+            ),
+          }}
+        />
       // </Stack>
   );
 }

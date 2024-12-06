@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and p
 import { router } from 'expo-router';
 
 export default function CustomDrawerContent() {
+
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
   const [selectedFilters, setSelectedFilters] = useState({
     courses: false,
