@@ -81,7 +81,7 @@ export default function QuarterScreen() {
 
   return (
       <View style={styles.container}>
-        <Text style={styles.title}>Quarter Information</Text>
+        {/*<Text style={styles.title}>Quarter Information</Text>*/}
         <FlatList
             data={Object.entries(quarterState)}
             keyExtractor={item => item[0]}
