@@ -1,10 +1,11 @@
 import type {HttpsCallable} from "@firebase/functions";
 import {type RequestData, type ResponseData, Status} from "@/types";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {Mutex} from "async-mutex";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
+import useValue from "@/hooks/useValue";
 
 dayjs.extend(duration);
 
@@ -76,6 +77,7 @@ async function isCacheValid(cache: CacheParams): Promise<boolean> {
 
 export function useFirebaseFunction<Params = unknown, Data = unknown>(
     {
+      key,
       cache,
       tries = 5,
       callable,
@@ -84,6 +86,7 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
       onFetch = () => {},
       onFail = () => {}
     }: {
+      key: string;
       cache?: CacheParams;
       tries?: number;
       callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Data>>;
@@ -92,15 +95,16 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
       onFetch?: () => void,
       onFail?: () => void
     }): Data | null {
-  const [data, setData] = useState<Data | null>(null);
+  const [getData, setData] = useValue<Data>(key, false);
+  const data = getData();
   const mutexRef = useRef<Mutex | null>(null);
   const triesRef = useRef<number>(0);
-  useEffect(() => {
+  const callback = useCallback(() => {
     if (!mutexRef.current) {
       mutexRef.current = new Mutex();
     }
     mutexRef.current.acquire().then(async release => {
-      if (triesRef.current < tries && await condition(data)) {
+      if (triesRef.current < tries && await condition(getData())) {
         if (cache) {
           const cachedStr = await AsyncStorage.getItem(cache.key);
           const cached: Data | null = JSON.parse(cachedStr ?? "null");
@@ -145,12 +149,16 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
         release();
       }
     });
-  }, [cache, callable, condition, data, onFail, onFetch, params, tries]);
+  }, [cache, callable, condition, getData, onFail, onFetch, params, setData, tries]);
+  useEffect(() => {
+    callback();
+  }, [callback, data]);
   return data;
 }
 
 export function useFirebaseFunction2<Params = unknown, Data = unknown>(
     {
+      key,
       caches,
       tries = 5,
       callable,
@@ -159,6 +167,7 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
       onFetch = () => {},
       onFail = () => {}
     }: {
+      key: string;
       caches: Record<keyof Data, CacheParams>;
       tries?: number;
       callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Partial<Data>>>;
@@ -167,15 +176,16 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
       onFetch?: (keys: (keyof Data)[]) => void
       onFail?: () => void
     }): Partial<Data> | null {
-  const [data, setData] = useState<Partial<Data> | null>(null);
+  const [getData, setData] = useValue<Partial<Data>>(key, false);
+  const data = getData();
   const mutexRef = useRef<Mutex | null>(null);
   const triesRef = useRef<number>(0);
-  useEffect(() => {
+  const callback = useCallback(() => {
     if (!mutexRef.current) {
       mutexRef.current = new Mutex();
     }
     mutexRef.current.acquire().then(async release => {
-      if (triesRef.current < tries && await condition(data)) {
+      if (triesRef.current < tries && await condition(getData())) {
         let data: Partial<Data> = {};
         const keys = (await Promise.all(Object.entries<CacheParams>(caches).map(async ([key, cache]) => {
           const cachedStr = await AsyncStorage.getItem(cache.key);
@@ -217,6 +227,9 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
         release();
       }
     });
-  }, [caches, callable, condition, data, onFail, onFetch, params, tries]);
+  }, [caches, callable, condition, getData, onFail, onFetch, params, setData, tries]);
+  useEffect(() => {
+    callback();
+  }, [callback, data]);
   return data;
 }

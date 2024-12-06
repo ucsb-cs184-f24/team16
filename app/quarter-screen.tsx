@@ -58,6 +58,7 @@ export default function QuarterScreen() {
 
   const [quarterState, setQuarterState] = useState<QuarterState | null>(null);
   const quarters = useFirebaseFunction({
+    key: "quarters",
     cache: {
       key: "quarters",
       duration: {days: 1}
