@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and plus
+import { router } from 'expo-router';
 
-const CustomDrawerContent = ({ navigation }) => {
+export default function CustomDrawerContent() {
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
   const [selectedFilters, setSelectedFilters] = useState({
     courses: false,
@@ -71,31 +72,31 @@ const CustomDrawerContent = ({ navigation }) => {
       <View style={styles.divider} />
 
       {/* Export Calendar */}
-    <TouchableOpacity onPress={() => console.log("export your calendar")}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 0}}>
-        <Ionicons name="download-outline" size={26} color="black" />
-        <Text style={{ fontSize: 16, marginLeft: 8 }}>Export Calendar</Text>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity onPress={() => console.log("export your calendar")}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 0 }}>
+          <Ionicons name="download-outline" size={26} color="black" />
+          <Text style={{ fontSize: 16, marginLeft: 8 }}>Export Calendar</Text>
+        </View>
+      </TouchableOpacity>
 
-    {/* Quarter Info */}
-    <TouchableOpacity onPress={() => navigation.navigate('quarter-screen')}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20}}>
-        <Ionicons name="information-circle-outline" size={26} color="black" />
-        <Text style={{ fontSize: 16, marginLeft: 8 }}>Quarter Info</Text>
-      </View>
-    </TouchableOpacity>
+      {/* Quarter Info */}
+      <TouchableOpacity onPress={() => router.navigate({ pathname: '/quarter-screen' })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+          <Ionicons name="information-circle-outline" size={26} color="black" />
+          <Text style={{ fontSize: 16, marginLeft: 8 }}>Quarter Info</Text>
+        </View>
+      </TouchableOpacity>
 
-    {/* Log out */}
-    <TouchableOpacity onPress={() => console.log("Logging out...")}>
-     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20}}>
-        <Ionicons name="log-out-outline" size={26} color="black" />
-        <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>
-      </View>
-    </TouchableOpacity>
-  </View>
+      {/* Log out */}
+      <TouchableOpacity onPress={() => console.log("Logging out...")}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+          <Ionicons name="log-out-outline" size={26} color="black" />
+          <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -144,5 +145,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
-export default CustomDrawerContent;
