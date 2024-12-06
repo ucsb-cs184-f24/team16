@@ -1,4 +1,4 @@
-import {useEffect, useReducer} from "react";
+import {useCallback, useEffect, useReducer} from "react";
 import {addListener, getValue, loadValue, removeListener, setValue} from "@/helpers/storage";
 
 export default function useValue<T>(
@@ -14,8 +14,13 @@ export default function useValue<T>(
       idPromise.then(id => removeListener(key, id));
     };
   }, [key, persist]);
-  return [
-    (defaultValue?: T) => getValue<T>(key, defaultValue),
-    (value: T | null) => setValue<T>(key, value, persist),
-  ];
+  const getter = useCallback(
+      (defaultValue?: T) => getValue<T>(key, defaultValue),
+      [key]
+  );
+  const setter = useCallback(
+      (value: T | null) => setValue<T>(key, value, persist),
+      [key, persist]
+  );
+  return [getter, setter];
 }
