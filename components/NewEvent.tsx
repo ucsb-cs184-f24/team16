@@ -52,7 +52,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
             onChangeText={setTitle}
             style={styles.input}
           />
-
+{/* 
         <Text style={styles.eventTitle}>Start Time:</Text>
           <TextInput
             placeholder="YYYY-MM-DD HH:mm:ss"
@@ -67,10 +67,10 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
             value={end}
             onChangeText={setEnd}
             style={styles.input}
-          />
+          /> */}
           
           {/* Set time using a time picker */}
-          {/* <View style={styles.datePickerContainer}>
+          <View style={styles.datePickerContainer}>
             <Text>Start Time</Text>
             <CustomDatePicker
               date={start} // Pass the Date object here
@@ -85,7 +85,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
               date={start} // Pass the Date object here
               onChange={(selectedDate) => setStart(selectedDate)} // keep as Date
             />
-          </View> */}
+          </View>
 
           <TextInput
             placeholder="Summary"
