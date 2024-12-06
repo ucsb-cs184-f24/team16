@@ -1,5 +1,5 @@
-import {StyleSheet, Image} from 'react-native';
-import {useLocalSearchParams} from "expo-router";
+import {Image, StyleSheet} from 'react-native';
+import {useGlobalSearchParams} from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import {ThemedView} from "@/components/ThemedView";
 import {ThemedText} from "@/components/ThemedText";
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
 });
 
 export default function EventInfo() {
-  const {title, start, end, summary} = useLocalSearchParams<EventInfoParamList>();
+  const {title, start, end, summary} = useGlobalSearchParams<EventInfoParamList>();
   return (
       <ParallaxScrollView
           headerBackgroundColor={{light: '#A1CEDC', dark: '#1D3D47'}}

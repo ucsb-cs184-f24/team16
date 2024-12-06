@@ -1,20 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, {useState} from 'react';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
-import { Ionicons } from '@expo/vector-icons'; // For icons like hamburger and plus
-import { router } from 'expo-router';
+import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
+import {router} from 'expo-router';
+
+interface SelectedFilters {
+  courses: boolean;
+  canvasEvents: boolean;
+  gradescopeEvents: boolean;
+  myEvents: boolean;
+}
 
 export default function CustomDrawerContent() {
 
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
-  const [selectedFilters, setSelectedFilters] = useState({
+  const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
     courses: false,
     canvasEvents: false,
     gradescopeEvents: false,
     myEvents: false,
   });
 
-  const toggleFilter = (filterKey) => {
+  const toggleFilter = (filterKey: keyof SelectedFilters) => {
     setSelectedFilters((prev) => ({
       ...prev,
       [filterKey]: !prev[filterKey],
@@ -47,12 +54,15 @@ export default function CustomDrawerContent() {
         {/* Expanded Filter Options */}
         {isExpanded && (
           <View style={styles.filterOptions}>
-            {[
+            {([
               { label: 'Courses', key: 'courses' },
               { label: 'Canvas Events', key: 'canvasEvents' },
               { label: 'Gradescope Events', key: 'gradescopeEvents' },
               { label: 'My Events', key: 'myEvents' },
-            ].map((filter) => (
+            ] as {
+              label: string;
+              key: keyof SelectedFilters;
+            }[]).map((filter) => (
               <TouchableOpacity
                 key={filter.key}
                 style={styles.filterRow}
