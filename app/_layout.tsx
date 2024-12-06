@@ -42,23 +42,23 @@ export default function RootLayout() {
     <>
       <Drawer.Navigator
           drawerContent={() => <CustomDrawerContent/>} // Custom Drawer
-        screenOptions={{
-          drawerStyle: {
-            backgroundColor: 'white', // Optional: Customize drawer background
-            width: 300, // Set drawer width
-          },
-          headerShown: true,
-          headerLeft: () => (
-              <TouchableOpacity
-                  style={{
-                    paddingLeft: 16,
-                  }}
-                  onPress={() => router.back()}
-              >
-                <Ionicons name="arrow-back" size={26} color="black"/>
-              </TouchableOpacity>
-          ),
-        }}
+          screenOptions={{
+            drawerStyle: {
+              backgroundColor: 'white', // Optional: Customize drawer background
+              width: 300, // Set drawer width
+            },
+            headerShown: true,
+            headerLeft: () => (
+                <TouchableOpacity
+                    style={{
+                      paddingLeft: 16,
+                    }}
+                    onPress={() => router.back()}
+                >
+                  <Ionicons name="arrow-back" size={26} color="black"/>
+                </TouchableOpacity>
+            ),
+          }}
       >
         <Drawer.Screen
             name="index"

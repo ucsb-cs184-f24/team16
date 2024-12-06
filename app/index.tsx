@@ -1,5 +1,7 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {Alert, StyleSheet, Text, View} from 'react-native';
 import Schedule from '@/components/Schedule';
+import {getCalendars, getQuarters} from "@/helpers/firebase";
+import {useFirebaseFunction, useFirebaseFunction2} from "@/hooks/useFirebaseFunction";
 import SignIn from "@/components/SignIn";
 import {useEffect, useState} from "react";
 import type {TimelineEventProps} from "react-native-calendars";
@@ -12,17 +14,32 @@ import useQuarters from "@/hooks/useQuarters";
 
 export default function Index() {
   const [getCredentials, setCredentials] = useValue<Credentials>("credentials");
+  const coursesFilter = useValue<boolean>("courses filter")[0](false);
+  const canvasFilter = useValue<boolean>("canvas filter")[0](false);
+  const gradescopeFilter = useValue<boolean>("gradescope filter")[0](false);
+  const customFilter = useValue<boolean>("custom filter")[0](false);
   const calendars = useCalendars(getCredentials, setCredentials);
   const quarters = useQuarters();
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});
   useEffect(() => {
     if (calendars && quarters) {
-      const [eventsByDate, marked] = processCalendars(calendars, quarters);
+      const [eventsByDate, marked] = processCalendars(calendars, quarters, {
+        courses: coursesFilter,
+        canvas: canvasFilter,
+        gradescope: gradescopeFilter,
+        custom: customFilter,
+      });
       setEventsByDate(eventsByDate);
       setMarked(marked);
     }
-  }, [calendars, calendars?.gradescopeCourses, calendars?.canvasEvents, calendars?.ucsbEvents, quarters]);
+  }, /* eslint-disable react-hooks/exhaustive-deps */ [
+    canvasFilter && calendars?.canvasEvents,
+    coursesFilter && calendars?.ucsbEvents,
+    gradescopeFilter && calendars?.gradescopeCourses,
+    customFilter,
+    quarters,
+  ] /* eslint-enable react-hooks/exhaustive-deps */);
 
   return getCredentials() ? (
       <View

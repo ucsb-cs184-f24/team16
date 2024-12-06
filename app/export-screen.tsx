@@ -1,28 +1,37 @@
-import React, {useState} from 'react';
+import React, {SetStateAction, useState} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
 import createIcs from "@/helpers/create-ics";
 import RNShare from "react-native-share";
 
+export interface SelectedFilters {
+  courses: boolean;
+  canvasEvents: boolean;
+  gradescopeEvents: boolean;
+  myEvents: boolean;
+}
+
+export function toggleFilter(
+    filterKey: keyof SelectedFilters,
+    setSelectedFilters: (value: SetStateAction<SelectedFilters>) => void
+): void {
+  setSelectedFilters((prev) => ({
+    ...prev,
+    [filterKey]: !prev[filterKey],
+  }));
+}
 
 export default function ExportScreen() {
 
-    const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
+  // const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
     const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
       courses: false,
       canvasEvents: false,
       gradescopeEvents: false,
       myEvents: false,
     });
-  
-    const toggleFilter = (filterKey: keyof SelectedFilters) => {
-      setSelectedFilters((prev) => ({
-        ...prev,
-        [filterKey]: !prev[filterKey],
-      }));
-    };
-  
+
     return (
       <View style={styles.container}>
         <Text style={styles.username}>Select Items</Text>
@@ -60,11 +69,11 @@ export default function ExportScreen() {
                 <TouchableOpacity
                   key={filter.key}
                   style={styles.filterRow}
-                  onPress={() => toggleFilter(filter.key)}
+                  onPress={() => toggleFilter(filter.key, setSelectedFilters)}
                 >
                   <CheckBox
                     value={selectedFilters[filter.key]}
-                    onValueChange={() => toggleFilter(filter.key)}
+                    onValueChange={() => toggleFilter(filter.key, setSelectedFilters)}
                   />
                   <Text style={styles.filterText}>{filter.label}</Text>
                 </TouchableOpacity>

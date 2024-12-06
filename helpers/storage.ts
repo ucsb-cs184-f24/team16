@@ -42,13 +42,16 @@ export async function loadValue<T>(key: string, persist: boolean = true): Promis
   }
 }
 
-export function getValue<T>(key: string, defaultValue?: T): T | null {
+export function getValue<T>(key: string, defaultValue: T): T;
+export function getValue<T>(key: string, defaultValue?: null): T | null;
+export function getValue<T>(key: string, defaultValue?: T | null): T | null;
+export function getValue<T>(
+    key: string, defaultValue: T | null = null
+): T | null {
   if (key in storage) {
     return storage[key].value;
-  } else if (defaultValue) {
-    return defaultValue;
   } else {
-    return null;
+    return defaultValue;
   }
 }
 

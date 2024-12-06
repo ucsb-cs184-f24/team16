@@ -16,7 +16,16 @@ const letterToDay: Record<string, number> = {
   S: 6
 };
 
-export function processCalendars(data: Partial<CalendarsData>, quarters: Quarters): [Record<string, TimelineEventProps[]>, MarkedDates] {
+export function processCalendars(
+    data: Partial<CalendarsData>,
+    quarters: Quarters,
+    filters: {
+      courses: boolean;
+      canvas: boolean;
+      gradescope: boolean;
+      custom: boolean;
+    },
+): [Record<string, TimelineEventProps[]>, MarkedDates] {
   console.log("processCalendars", data, JSON.stringify(quarters, null, 2));
   // return [{}, {}];
   const marked: MarkedDates = {};
@@ -24,7 +33,7 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
 
   const UCSBSessionByDay: UCSBSession[][] = [[], [], [], [], [], [], []];
 
-  if (data.ucsbEvents) {
+  if (filters.courses && data.ucsbEvents) {
     for (const course of data.ucsbEvents.courses) {
       console.log("course", course);
       for (const session of course.sessions) {
@@ -69,7 +78,7 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
     }
   }
 
-  if (data.canvasEvents) {
+  if (filters.canvas && data.canvasEvents) {
     for (const course of data.canvasEvents) {
       for (const event of course.events) {
         console.log("Canvas event", event);
@@ -114,7 +123,7 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
     }
   }
 
-  if (data.gradescopeCourses) {
+  if (filters.gradescope && data.gradescopeCourses) {
     for (const course of data.gradescopeCourses) {
       for (const assignment of course.assignments) {
         console.log("Gradescope assignment", assignment);
