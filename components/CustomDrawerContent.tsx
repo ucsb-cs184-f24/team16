@@ -83,7 +83,7 @@ export default function CustomDrawerContent() {
       <View style={styles.divider} />
 
       {/* Export Calendar */}
-      <TouchableOpacity onPress={() => console.log("export your calendar")}>
+      <TouchableOpacity onPress={() => router.navigate({ pathname: '/export-screen' })}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 0 }}>
           <Ionicons name="download-outline" size={26} color="black" />
           <Text style={{ fontSize: 16, marginLeft: 8 }}>Export Calendar</Text>

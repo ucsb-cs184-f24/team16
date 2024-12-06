@@ -39,6 +39,7 @@ export default function Schedule({eventsByDate, marked}: ScheduleProps) {
     start: -1,
     end: 25,
     onEventPress(event: TimelineEventProps): void {
+      console.log("Pressed the event ")
       router.navigate({pathname: "/event-info", params: {
           title: event.title,
           start: event.start,

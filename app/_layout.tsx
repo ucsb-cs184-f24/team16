@@ -6,6 +6,7 @@ import CustomDrawerContent from '@/components/CustomDrawerContent';
 import EventInfo from "@/app/event-info";
 import QuarterScreen from "@/app/quarter-screen";
 import Index from "@/app/index";
+import ExportScreen from './export-screen';
 import * as React from "react";
 
 const Drawer = createDrawerNavigator();
@@ -76,6 +77,13 @@ export default function RootLayout() {
             component={QuarterScreen}
             options={{
               title: "Quarter Information",
+            }}
+        />
+        <Drawer.Screen
+            name="export-screen"
+            component={ExportScreen}
+            options={{
+              title: "Export Calendar",
             }}
         />
       </Drawer.Navigator>
