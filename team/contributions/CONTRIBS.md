@@ -1,4 +1,18 @@
 # Contributions
+## Team Roles
+### Tiger Yu
+Developer
+
+### Ziyang Huang
+Developer
+
+### Boming Kong
+Evaluator
+
+### Leyang Ni
+UI designer
+
+
 
 ## Individual Contributions
 
@@ -21,7 +35,18 @@
 
 
 ### Leyang Ni
-
+- Main Contributions
+  - UI design using Figma
+  - Implementation of UI design in our codebase
+    - Restructured the header
+    - Added side bar/drawer
+    - Added add-new-event screen
+    - Added export-calendar screen
+  - Helped with the implementation in other parts
+  
+- Other contributions
+  - Documenting group progress
+  - 
 
 ## Contribution Graph
 
