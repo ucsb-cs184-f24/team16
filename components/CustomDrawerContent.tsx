@@ -3,8 +3,9 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
 import {router} from 'expo-router';
-import {Credentials} from "@/types/firebase";
+import type {Credentials} from "@/types/firebase";
 import useValue from '@/hooks/useValue';
+import {setValue} from "@/helpers/storage";
 
 export default function CustomDrawerContent() {
 
@@ -103,7 +104,10 @@ export default function CustomDrawerContent() {
       </TouchableOpacity>
 
       {/* Log out */}
-      <TouchableOpacity onPress={() => console.log("Logging out...")}>
+      <TouchableOpacity onPress={() => {
+        console.log("Logging out...");
+        setValue<Credentials>("credentials", null);
+      }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
           <Ionicons name="log-out-outline" size={26} color="black" />
           <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>
