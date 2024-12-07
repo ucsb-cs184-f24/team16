@@ -38,7 +38,7 @@ const UCSBDayToNumber: Record<string, number> = {
 export default function createIcs(): string {
   const quarters = getValue<Quarters>("quarters");
   const calendars = getValue<CalendarsData>("calendars");
-  const custom = getValue<TimelineEventProps[]>("custom events");
+  const custom = getValue<Record<string, TimelineEventProps>>("custom events");
   const calendar = ical({
     name: "Calendar",
     timezone: "US/Pacific"
@@ -143,7 +143,7 @@ export default function createIcs(): string {
     }
   }
   if (custom) {
-    for (const event of custom) {
+    for (const event of Object.values(custom)) {
       calendar.createEvent({
         start: dayjs(event.start, "YYYY-MM-DD HH:mm:ss").toDate(),
         end: dayjs(event.end, "YYYY-MM-DD HH:mm:ss").toDate(),
