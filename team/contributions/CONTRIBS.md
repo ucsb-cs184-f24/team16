@@ -57,4 +57,4 @@ UI designer
 
 [graph](https://github.com/ucsb-cs184-f24/team16/graphs/contributors)
 
-The graph [is/isn't] accurate.
+The graph is accurate.
