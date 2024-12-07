@@ -30,7 +30,8 @@ UI designer
   - Help others in code implementations
 
 ### Ziyang Huang
-
+- Contributions
+  - Canvas event display
 
 ### Boming Kong
 - Contribution
