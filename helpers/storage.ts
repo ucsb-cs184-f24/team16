@@ -49,7 +49,7 @@ export function getValue<T>(
     key: string, defaultValue: T | null = null
 ): T | null {
   if (key in storage) {
-    return storage[key].value;
+    return storage[key].value === null ? defaultValue : storage[key].value;
   } else {
     return defaultValue;
   }
