@@ -3,9 +3,9 @@ import {View, Text, Button, Platform, TouchableOpacity} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { StyleSheet } from 'react-native'; 
 
-export default class App extends Component {
+export default class CustomDatePicker extends Component {
   state = {
-    date: new Date('2020-06-12T14:42:42'),
+    date: new Date(),
     mode: 'date',
     show: false,
   }
@@ -35,32 +35,38 @@ export default class App extends Component {
   }
 
   render() {
-    const { show, date, mode } = this.state;
+  const { show, date, mode } = this.state;
 
-    return (
-      <View style={styles.container}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.button, styles.blueButton]} onPress={this.datepicker}>
-            <Text style={styles.buttonText}>Date Picker</Text>
-          </TouchableOpacity>
+  return (
+    <View style={styles.container}>
+      <View style={styles.buttonRow}>
+      <TouchableOpacity onPress={this.datepicker} style={styles.inputContainerStyle}>
+          <Text style={styles.buttonText}>Pick Date</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.button, styles.blueButton]} onPress={this.timepicker}>
-            <Text style={styles.buttonText}>Time Picker</Text>
-          </TouchableOpacity>
-        </View>
-
-        {show && (
-          <DateTimePicker
-            value={date}
-            mode={mode}
-            is24Hour={true}
-            display="default"
-            onChange={this.setDate}
-          />
-        )}
+        <TouchableOpacity onPress={this.timepicker} style={styles.inputContainerStyle}>
+          <Text style={styles.buttonText}>Pick Time</Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
+
+      {/* Display the selected date and time */}
+      <Text style={styles.selectedDateText}>
+        Selected {mode === 'date' ? 'Date' : 'Time'}: {date.toString()}
+      </Text>
+
+      {show && (
+        <DateTimePicker
+          value={date}
+          mode={mode}
+          is24Hour={true}
+          display="default"
+          onChange={this.setDate}
+        />
+      )}
+    </View>
+  );
+}
+
 }
 
 const styles = StyleSheet.create({
@@ -69,27 +75,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa', // Optional for better contrast
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: 'row', // Place buttons in a row
+    justifyContent: 'space-between', // Space between the buttons
+    alignItems: 'center',
+    width: '100%', // Adjust width for proper alignment
     marginVertical: 10,
   },
+  selectedDateText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
   button: {
-    flex: 1,
-    padding: 10,
-    marginHorizontal: 5,
+    flex: 1, // Ensure buttons are of equal size
+    marginHorizontal: 5, // Add spacing between buttons
+    paddingVertical: 10, // Add padding for better touch target
+    borderRadius: 8, // Rounded corners
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 5,
+    backgroundColor: '#6997db',
   },
   blueButton: {
-    backgroundColor: 'blue',
+    backgroundColor: '#6997db', // Blue button background
+  },
+  innerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
+    alignSelf: 'center',
+    color: 'white', // Text color
+    fontSize: 10, // Increase font size for readability
+    marginLeft: 10,
     fontWeight: 'bold',
+  },
+  inputContainerStyle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#98b6ed',
+    borderRadius: 5,
+    marginVertical: 5,
+    marginHorizontal: 5,
+    paddingRight: 20,
+    height: 30,
+    backgroundColor: '#6997db',
   },
 });

@@ -21,7 +21,16 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
   const [end, setEnd] = useState('');
   const [summary, setSummary] = useState('');
 
-  const [date, setDate] = useState(new Date(1598051730000));
+  const [date, setDate] = useState(new Date());
+  
+  // const [time, setTime] = useState(new Date());
+
+  const formatDateTime = (date) => {
+    // Format date to "YYYY-MM-DD HH:mm:ss"
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+  };
+
+  console.log(formatDateTime(date));
 
   const onChange = (event, selectedDate) => {
     const currentDate = selectedDate;
@@ -71,22 +80,30 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
           
           {/* Set time using a time picker */}
           <View style={styles.datePickerContainer}>
-            <Text>Start Time</Text>
+          <Text style={styles.eventTitle}>Start Time:</Text>
             <CustomDatePicker
               date={start} // Pass the Date object here
               onChange={(selectedDate) => setStart(selectedDate)} // keep as Date
             />
+            {/* <View>
+              <TextInput
+            placeholder="YYYY-MM-DD HH:mm:ss"
+            value={start}
+            onChangeText={setStart}
+            style={styles.input}
+            /></View> */}
             
           </View>
 
           <View style={styles.datePickerContainer}>
-          <Text>End Time</Text>
+          <Text style={styles.eventTitle}>End Time:</Text>
             <CustomDatePicker
               date={start} // Pass the Date object here
               onChange={(selectedDate) => setStart(selectedDate)} // keep as Date
             />
           </View>
 
+          <Text style={styles.eventTitle}>Description:</Text>
           <TextInput
             placeholder="Summary"
             value={summary}
