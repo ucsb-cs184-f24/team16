@@ -99,7 +99,10 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
           transparent={true}
           onRequestClose={handleClose}
       >
-        <View style={styles.modalContainer}>
+        <TouchableOpacity
+            style={styles.modalContainer}
+            onPress={() => setPickerVisible(false)}
+        >
           <TouchableOpacity
               style={styles.modalContent}
               onPress={() => setPickerVisible(false)}
@@ -179,7 +182,7 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
                   onChange={onPickerChange}
               />
           ) : null}
-        </View>
+        </TouchableOpacity>
       </Modal>
   );
 };
