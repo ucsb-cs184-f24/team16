@@ -1,12 +1,13 @@
-import {useGlobalSearchParams} from "expo-router";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import {ThemedView} from "@/components/ThemedView";
-import {ThemedText} from "@/components/ThemedText";
-import React, { useState } from 'react';
-import { Modal, View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from "@expo/vector-icons";
-import CustomDatePicker from "@/components/DateTimePicker"
+import { useState } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface AddEventModalProps {
   visible: boolean;
@@ -15,31 +16,83 @@ interface AddEventModalProps {
 }
 
 const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEvent }) => {
-  const [title, setTitle] = useState('');
-  // format: YYYY-MM-DD HH:mm:ss
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [summary, setSummary] = useState('');
+  const [title, setTitle] = useState("");
+  const [start, setStart] = useState(""); // Start date-time in string format
+  const [end, setEnd] = useState(""); // End date-time in string format
+  const [summary, setSummary] = useState("");
 
-  const [date, setDate] = useState(new Date());
-  
-  // const [time, setTime] = useState(new Date());
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"date" | "time">("date");
+  const [currentField, setCurrentField] = useState<"start" | "end" | null>(null);
+  const [tempDate, setTempDate] = useState<Date | null>(null); // Temporary Date object
 
-  const formatDateTime = (date) => {
-    // Format date to "YYYY-MM-DD HH:mm:ss"
-    return date.toISOString().slice(0, 19).replace('T', ' ');
+  const formatDateTime = (date: Date): string => {
+    // Format Date object to "YYYY-MM-DD HH:mm:ss"
+    const pad = (num: number) => num.toString().padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   };
 
-  console.log(formatDateTime(date));
+  const showPicker = (field: "start" | "end", mode: "date" | "time") => {
+    setCurrentField(field);
+    setPickerMode(mode);
 
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate;
-    console.log(selectedDate);
-    setDate(currentDate);
+    // Initialize the picker with the current date or time for the selected field
+    if (field === "start" && start) {
+      setTempDate(new Date(start));
+    } else if (field === "end" && end) {
+      setTempDate(new Date(end));
+    } else {
+      setTempDate(new Date());
+    }
+    setPickerVisible(true);
+  };
+
+  const onPickerChange = (event: any, selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      // Handle updating the temporary date based on picker mode
+      const updatedDate = tempDate ? new Date(tempDate) : new Date();
+      if (pickerMode === "date") {
+        // Update only the date part
+        updatedDate.setFullYear(selectedDate.getFullYear());
+        updatedDate.setMonth(selectedDate.getMonth());
+        updatedDate.setDate(selectedDate.getDate());
+      } else if (pickerMode === "time") {
+        // Update only the time part
+        updatedDate.setHours(selectedDate.getHours());
+        updatedDate.setMinutes(selectedDate.getMinutes());
+        updatedDate.setSeconds(0);
+      }
+
+      // Update the corresponding field (start or end) with the formatted string
+      const formattedDate = formatDateTime(updatedDate);
+      if (currentField === "start") {
+        setStart(formattedDate);
+      } else if (currentField === "end") {
+        setEnd(formattedDate);
+      }
+    }
+
+    setPickerVisible(false); // Close the picker
   };
 
   const handleAddEvent = () => {
     onAddEvent(title, start, end, summary);
+    onClose();
+    resetFields(); // Reset fields when adding an event
+  };
+
+  const resetFields = () => {
+    setTitle("");
+    setStart("");
+    setEnd("");
+    setSummary("");
+    setTempDate(null);
+  };
+
+  const handleClose = () => {
+    resetFields(); // Reset fields when closing the modal
     onClose();
   };
 
@@ -48,7 +101,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
@@ -61,47 +114,34 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
             onChangeText={setTitle}
             style={styles.input}
           />
-{/* 
-        <Text style={styles.eventTitle}>Start Time:</Text>
-          <TextInput
-            placeholder="YYYY-MM-DD HH:mm:ss"
-            value={start}
-            onChangeText={setStart}
-            style={styles.input}
-          />
 
-        <Text style={styles.eventTitle}>End Time:</Text>
-          <TextInput
-            placeholder="YYYY-MM-DD HH:mm:ss"
-            value={end}
-            onChangeText={setEnd}
-            style={styles.input}
-          /> */}
-          
-          {/* Set time using a time picker */}
-          <View style={styles.datePickerContainer}>
           <Text style={styles.eventTitle}>Start Time:</Text>
-            <CustomDatePicker
-              date={start} // Pass the Date object here
-              onChange={(selectedDate) => setStart(selectedDate)} // keep as Date
-            />
-            {/* <View>
-              <TextInput
-            placeholder="YYYY-MM-DD HH:mm:ss"
-            value={start}
-            onChangeText={setStart}
-            style={styles.input}
-            /></View> */}
-            
-          </View>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => showPicker("start", "date")}
+          >
+            <Text style={styles.buttonText}>{start ? start.split(" ")[0] : "Pick Date"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => showPicker("start", "time")}
+          >
+            <Text style={styles.buttonText}>{start ? start.split(" ")[1] : "Pick Time"}</Text>
+          </TouchableOpacity>
 
-          <View style={styles.datePickerContainer}>
           <Text style={styles.eventTitle}>End Time:</Text>
-            <CustomDatePicker
-              date={start} // Pass the Date object here
-              onChange={(selectedDate) => setStart(selectedDate)} // keep as Date
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => showPicker("end", "date")}
+          >
+            <Text style={styles.buttonText}>{end ? end.split(" ")[0] : "Pick Date"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => showPicker("end", "time")}
+          >
+            <Text style={styles.buttonText}>{end ? end.split(" ")[1] : "Pick Time"}</Text>
+          </TouchableOpacity>
 
           <Text style={styles.eventTitle}>Description:</Text>
           <TextInput
@@ -115,87 +155,88 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEv
             <TouchableOpacity style={styles.button1} onPress={handleAddEvent}>
               <Text style={styles.buttonText}>Add</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.button2} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancel</Text>      
+            <TouchableOpacity style={styles.button2} onPress={handleClose}>
+              <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {pickerVisible && (
+          <DateTimePicker
+            value={tempDate || new Date()}
+            mode={pickerMode}
+            is24Hour={true}
+            display="default"
+            onChange={onPickerChange}
+          />
+        )}
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-
-  button1: {
-    backgroundColor: '#6997db', // Customize the button color
-    borderRadius: 8,
-    paddingVertical: 6, // Adjust for smaller height
-    paddingHorizontal: 15, // Adjust for smaller width
-    alignSelf: 'flex-start', // Adjust size to fit content
-  },
-
-  button2: {
-    backgroundColor: '#fa7373', // Customize the button color
-    borderRadius: 8,
-    paddingVertical: 6, // Adjust for smaller height
-    paddingHorizontal: 10, // Adjust for smaller width
-    alignSelf: 'flex-end', 
-  },
-
-  innerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 14, // Smaller font size
-    marginLeft: 6,
-    alignItems: 'center',
-  },
-
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-
   modalContent: {
     width: 300,
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
-
-  eventTitle:{
+  eventTitle: {
     fontSize: 14,
     marginTop: 10,
     marginBottom: 10,
-    textAlign: 'left',
   },
   input: {
     borderBottomWidth: 1,
     marginBottom: 10,
-    color: '#4f4e4e',
+    color: "#4f4e4e",
     padding: 5,
   },
-  
-  datePickerContainer: {
-    marginVertical: 30,
-    width: '50%',
+  datePickerButton: {
+    backgroundColor: "#6997db",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  innerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  button1: {
+    backgroundColor: "#6997db",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+  },
+  button2: {
+    backgroundColor: "#fa7373",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
 });
 
 export default AddEventModal;
-
-
