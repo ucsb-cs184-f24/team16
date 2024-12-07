@@ -30,8 +30,12 @@ UI designer
   - Help others in code implementations
 
 ### Ziyang Huang
-- Contributions
-  - Canvas event display
+- Code Contributions
+  - Implemented API calls to display Canvas
+  - Adjusted calendar assignment display for assignments
+  - Updated event colors and layout
+- other contributions
+  - Help others debug issues for updated app initialization
 
 ### Boming Kong
 - Contribution
