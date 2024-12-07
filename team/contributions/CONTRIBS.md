@@ -9,6 +9,7 @@ Developer
 ### Boming Kong
 Evaluator
 
+
 ### Leyang Ni
 UI designer
 
@@ -32,7 +33,10 @@ UI designer
 
 
 ### Boming Kong
-
+- Contribution
+  - Discover login issue during evaluation
+  - Discover UI bugs
+  - Discover login bug where user can still see quarter info before login
 
 ### Leyang Ni
 - Main Contributions
