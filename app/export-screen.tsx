@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View, Button} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
-import {router} from 'expo-router';
+import createIcs from "@/helpers/create-ics";
+import RNShare from "react-native-share";
 
 
 export default function ExportScreen() {
@@ -77,7 +78,14 @@ export default function ExportScreen() {
     
   
         {/* Export Calendar Button */}
-        <TouchableOpacity style={styles.button} onPress={() => console.log("Export Calendar")}>
+        <TouchableOpacity style={styles.button} onPress={() => {
+          RNShare.open({
+            title: 'Share calendar',
+            type: 'text/calendar',
+            url: `data:text/calendar;base64,${btoa(createIcs())}`,
+            showAppsToView: true,
+          }).then(() => console.log("calendar exported"), e => console.error(e));
+        }}>
         <View style={styles.innerContainer}>
             <Ionicons name="download-outline" size={20} color="white" />
             <Text style={styles.buttonText}>Export</Text>

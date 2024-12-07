@@ -84,16 +84,17 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
       params,
       condition = (data: Data | null) => !data,
       onFetch = () => {},
-      onFail = () => {}
+      onFail = () => {
+      },
     }: {
       key: string;
       cache?: CacheParams;
       tries?: number;
       callable: HttpsCallable<RequestData<Params, Data>, ResponseData<Data>>;
-      params: Params | Promise<Params> | (() => Params | Promise<Params>),
-      condition?: (data: Data | null) => boolean | Promise<boolean>,
-      onFetch?: () => void,
-      onFail?: () => void
+      params: Params | Promise<Params> | (() => Params | Promise<Params>);
+      condition?: (data: Data | null) => boolean | Promise<boolean>;
+      onFetch?: () => void;
+      onFail?: () => void;
     }): Data | null {
   const [getData, setData] = useValue<Data>(key, false);
   const data = getData();
