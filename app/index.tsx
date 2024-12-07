@@ -21,7 +21,6 @@ export default function Index() {
   const quarters = useQuarters();
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});
-  console.error(calendars?.ucsbEvents?.finals);
   useEffect(() => {
     if (calendars && quarters) {
       const [eventsByDate, marked] = processCalendars(calendars, quarters, customEvents, {
