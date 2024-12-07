@@ -1,4 +1,4 @@
-import {type FC, useState} from "react";
+import {useCallback, useState} from "react";
 import {Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -8,7 +8,15 @@ interface AddEventModalProps {
   onAddEvent: (title: string, start: string, end: string, summary: string) => void;
 }
 
-const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) => {
+function formatDateTime(date: Date): string {
+  // Format Date object to "YYYY-MM-DD HH:mm:ss"
+  const pad = (num: number) => num.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+  )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+export default function AddEventModal({visible, onClose, onAddEvent}: AddEventModalProps) {
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(""); // Start date-time in string format
   const [end, setEnd] = useState(""); // End date-time in string format
@@ -19,15 +27,7 @@ const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) =
   const [currentField, setCurrentField] = useState<"start" | "end" | null>(null);
   const [tempDate, setTempDate] = useState<Date | null>(null); // Temporary Date object
 
-  const formatDateTime = (date: Date): string => {
-    // Format Date object to "YYYY-MM-DD HH:mm:ss"
-    const pad = (num: number) => num.toString().padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  };
-
-  const showPicker = (field: "start" | "end", mode: "date" | "time") => {
+  const showPicker = useCallback((field: "start" | "end", mode: "date" | "time") => {
     setCurrentField(field);
     setPickerMode(mode);
 
@@ -40,9 +40,9 @@ const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) =
       setTempDate(new Date());
     }
     setPickerVisible(true);
-  };
+  }, [end, start]);
 
-  const onPickerChange = (event: any, selectedDate: Date | undefined) => {
+  const onPickerChange = useCallback((event: any, selectedDate: Date | undefined) => {
     if (selectedDate) {
       // Handle updating the temporary date based on picker mode
       const updatedDate = tempDate ? new Date(tempDate) : new Date();
@@ -68,26 +68,26 @@ const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) =
     }
 
     setPickerVisible(false); // Close the picker
-  };
+  }, [currentField, pickerMode, tempDate]);
 
-  const handleAddEvent = () => {
-    onAddEvent(title, start, end, summary);
-    onClose();
-    resetFields(); // Reset fields when adding an event
-  };
-
-  const resetFields = () => {
+  const resetFields = useCallback(() => {
     setTitle("");
     setStart("");
     setEnd("");
     setSummary("");
     setTempDate(null);
-  };
+  }, []);
 
-  const handleClose = () => {
+  const handleAddEvent = useCallback(() => {
+    onAddEvent(title, start, end, summary);
+    onClose();
+    resetFields(); // Reset fields when adding an event
+  }, [end, onAddEvent, onClose, resetFields, start, summary, title]);
+
+  const handleClose = useCallback(() => {
     resetFields(); // Reset fields when closing the modal
     onClose();
-  };
+  }, [onClose, resetFields]);
 
   return (
     <Modal
@@ -154,15 +154,19 @@ const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) =
           </View>
         </View>
 
-        {pickerVisible && (
+        {pickerVisible ? (
           <DateTimePicker
+              style={{
+                backgroundColor: "white",
+                zIndex: 2147483647
+              }}
             value={tempDate || new Date()}
             mode={pickerMode}
             is24Hour={true}
-            display="default"
+              display="spinner"
             onChange={onPickerChange}
           />
-        )}
+        ) : null}
       </View>
     </Modal>
   );
@@ -231,5 +235,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
 });
-
-export default AddEventModal;
