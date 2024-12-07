@@ -32,7 +32,7 @@ UI designer
 ### Ziyang Huang
 - Code Contributions
   - Implemented API calls to display Canvas
-  - Adjusted calendar assignment display for assignments
+  - Adjusted calendar assignment display
   - Updated event colors and layout
 - other contributions
   - Help others debug issues for updated app initialization
