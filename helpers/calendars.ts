@@ -16,15 +16,30 @@ const letterToDay: Record<string, number> = {
   S: 6
 };
 
-export function processCalendars(data: Partial<CalendarsData>, quarters: Quarters): [Record<string, TimelineEventProps[]>, MarkedDates] {
-  console.log("processCalendars", data, JSON.stringify(quarters, null, 2));
+export function processCalendars(
+    data: Partial<CalendarsData>,
+    quarters: Quarters,
+    customEvents: TimelineEventProps[],
+    filters: {
+      courses: boolean;
+      canvas: boolean;
+      gradescope: boolean;
+      custom: boolean;
+    },
+): [Record<string, TimelineEventProps[]>, MarkedDates] {
+  console.log(
+      "processCalendars",
+      data,
+      JSON.stringify(quarters, null, 2),
+      JSON.stringify(customEvents, null, 2),
+  );
   // return [{}, {}];
   const marked: MarkedDates = {};
   const eventsByDate: Record<string, TimelineEventProps[]> = {};
 
   const UCSBSessionByDay: UCSBSession[][] = [[], [], [], [], [], [], []];
 
-  if (data.ucsbEvents) {
+  if (filters.courses && data.ucsbEvents) {
     for (const course of data.ucsbEvents.courses) {
       console.log("course", course);
       for (const session of course.sessions) {
@@ -69,7 +84,7 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
     }
   }
 
-  if (data.canvasEvents) {
+  if (filters.canvas && data.canvasEvents) {
     for (const course of data.canvasEvents) {
       for (const event of course.events) {
         console.log("Canvas event", event);
@@ -114,7 +129,7 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
     }
   }
 
-  if (data.gradescopeCourses) {
+  if (filters.gradescope && data.gradescopeCourses) {
     for (const course of data.gradescopeCourses) {
       for (const assignment of course.assignments) {
         console.log("Gradescope assignment", assignment);
@@ -150,6 +165,40 @@ export function processCalendars(data: Partial<CalendarsData>, quarters: Quarter
             date: dateString2
           });
         }
+      }
+    }
+  }
+
+  if (filters.custom && customEvents) {
+    for (const event of customEvents) {
+      let start = dayjs(event.start, "YYYY-MM-DD HH:mm:ss");
+      let end = dayjs(event.end, "YYYY-MM-DD HH:mm:ss");
+      const dateString1 = start.format("YYYY-MM-DD");
+      const dateString2 = end.format("YYYY-MM-DD");
+      marked[dateString1] = {
+        marked: true
+      };
+      marked[dateString2] = {
+        marked: true
+      };
+      const dateString3 = start.hour(start.hour() - 1).format("YYYY-MM-DD");
+      const dateString4 = end.hour(end.hour() + 1).format("YYYY-MM-DD");
+      if (!eventsByDate[dateString3]) {
+        eventsByDate[dateString3] = [];
+      }
+      if (!eventsByDate[dateString4]) {
+        eventsByDate[dateString4] = [];
+      }
+      eventsByDate[dateString3].push({
+        ...event,
+        date: dateString3
+      });
+      if (dateString3 !== dateString4) {
+        console.log("Duplicating event", event);
+        eventsByDate[dateString4].push({
+          ...event,
+          date: dateString4
+        });
       }
     }
   }

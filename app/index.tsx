@@ -5,24 +5,40 @@ import {useEffect, useState} from "react";
 import type {TimelineEventProps} from "react-native-calendars";
 import {processCalendars} from "@/helpers/calendars";
 import type {MarkedDates} from "react-native-calendars/src/types";
-import {Credentials} from "@/types/firebase";
+import type {Credentials} from "@/types/firebase";
 import useValue from "@/hooks/useValue";
 import useCalendars from "@/hooks/useCalendars";
 import useQuarters from "@/hooks/useQuarters";
 
 export default function Index() {
   const [getCredentials, setCredentials] = useValue<Credentials>("credentials");
-  const calendars = useCalendars(getCredentials, setCredentials);
+  const coursesFilter = useValue<boolean>("courses filter")[0](true);
+  const canvasFilter = useValue<boolean>("canvas filter")[0](true);
+  const gradescopeFilter = useValue<boolean>("gradescope filter")[0](true);
+  const customFilter = useValue<boolean>("custom filter")[0](true);
+  const [calendars, calendarsErr] = useCalendars(getCredentials, setCredentials);
+  const customEvents = useValue<TimelineEventProps[]>("custom events")[0]([]);
   const quarters = useQuarters();
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});
   useEffect(() => {
     if (calendars && quarters) {
-      const [eventsByDate, marked] = processCalendars(calendars, quarters);
+      const [eventsByDate, marked] = processCalendars(calendars, quarters, customEvents, {
+        courses: coursesFilter,
+        canvas: canvasFilter,
+        gradescope: gradescopeFilter,
+        custom: customFilter,
+      });
       setEventsByDate(eventsByDate);
       setMarked(marked);
     }
-  }, [calendars, calendars?.gradescopeCourses, calendars?.canvasEvents, calendars?.ucsbEvents, quarters]);
+  }, /* eslint-disable react-hooks/exhaustive-deps */ [
+    canvasFilter && calendars?.canvasEvents,
+    coursesFilter && calendars?.ucsbEvents,
+    gradescopeFilter && calendars?.gradescopeCourses,
+    customFilter && customEvents,
+    quarters,
+  ] /* eslint-enable react-hooks/exhaustive-deps */);
 
   return getCredentials() ? (
       <View
@@ -36,12 +52,13 @@ export default function Index() {
         ) : (
             <>
               <Text>Loading...</Text>
+              <Text>You might get a DUO prompt</Text>
             </>
         )}
 
       </View>
   ) : (
-      <SignIn/>
+      <SignIn err={calendarsErr ? String(calendarsErr) : null}/>
   );
 }
 

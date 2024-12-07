@@ -1,35 +1,20 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
 import {router} from 'expo-router';
-import {Credentials} from "@/types/firebase";
+import type {Credentials} from "@/types/firebase";
 import useValue from '@/hooks/useValue';
-
-interface SelectedFilters {
-  courses: boolean;
-  canvasEvents: boolean;
-  gradescopeEvents: boolean;
-  myEvents: boolean;
-}
+import {setValue} from "@/helpers/storage";
 
 export default function CustomDrawerContent() {
 
   const [getCredentials] = useValue<Credentials>("credentials");
+  const [getCoursesFilter, setCoursesFilter] = useValue<boolean>("courses filter");
+  const [getCanvasFilter, setCanvasFilter] = useValue<boolean>("canvas filter");
+  const [getGradescopeFilter, setGradescopeFilter] = useValue<boolean>("gradescope filter");
+  const [getCustomFilter, setCustomFilter] = useValue<boolean>("custom filter");
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
-  const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
-    courses: false,
-    canvasEvents: false,
-    gradescopeEvents: false,
-    myEvents: false,
-  });
-
-  const toggleFilter = (filterKey: keyof SelectedFilters) => {
-    setSelectedFilters((prev) => ({
-      ...prev,
-      [filterKey]: !prev[filterKey],
-    }));
-  };
 
   return (
     <View style={styles.container}>
@@ -55,31 +40,48 @@ export default function CustomDrawerContent() {
         </View>
 
         {/* Expanded Filter Options */}
-        {isExpanded && (
+        {isExpanded ? (
           <View style={styles.filterOptions}>
             {([
-              { label: 'Courses', key: 'courses' },
-              { label: 'Canvas Events', key: 'canvasEvents' },
-              { label: 'Gradescope Events', key: 'gradescopeEvents' },
-              { label: 'My Events', key: 'myEvents' },
-            ] as {
-              label: string;
-              key: keyof SelectedFilters;
-            }[]).map((filter) => (
+              {
+                label: 'Courses',
+                key: 'courses',
+                getter: getCoursesFilter,
+                setter: setCoursesFilter,
+              },
+              {
+                label: 'Canvas Events',
+                key: 'canvasEvents',
+                getter: getCanvasFilter,
+                setter: setCanvasFilter,
+              },
+              {
+                label: 'Gradescope Events',
+                key: 'gradescopeEvents',
+                getter: getGradescopeFilter,
+                setter: setGradescopeFilter,
+              },
+              {
+                label: 'My Events',
+                key: 'myEvents',
+                getter: getCustomFilter,
+                setter: setCustomFilter,
+              },
+            ]).map(({label, key, getter, setter}) => (
               <TouchableOpacity
-                key={filter.key}
+                  key={key}
                 style={styles.filterRow}
-                onPress={() => toggleFilter(filter.key)}
+                  onPress={() => setter(!getter())}
               >
                 <CheckBox
-                  value={selectedFilters[filter.key]}
-                  onValueChange={() => toggleFilter(filter.key)}
+                    value={getter(false)}
+                    onValueChange={() => setter(!getter(false))}
                 />
-                <Text style={styles.filterText}>{filter.label}</Text>
+                <Text style={styles.filterText}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* Divider */}
@@ -102,7 +104,10 @@ export default function CustomDrawerContent() {
       </TouchableOpacity>
 
       {/* Log out */}
-      <TouchableOpacity onPress={() => console.log("Logging out...")}>
+      <TouchableOpacity onPress={() => {
+        console.log("Logging out...");
+        setValue<Credentials>("credentials", null);
+      }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
           <Ionicons name="log-out-outline" size={26} color="black" />
           <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>

@@ -99,14 +99,14 @@ export default function getUCSBEvents(jsdom: JSDOM): UCSBEvents {
         const {MMMM, D, YYYY, h1, mm1, A1, h2, mm2, A2} = match.groups;
         result.finals.push({
           name: nameElement.textContent.replaceAll(/\s+/g, " ").trim(),
-          start: dayjs(
+          start: dayjs.utc(
             `${MMMM} ${D}, ${YYYY} ${h1}:${mm1} ${A1}`,
             "MMMM D, YYYY h:mm A"
-          ).toISOString(),
-          end: dayjs(
+          ).tz("America/Los_Angeles", true).toISOString(),
+          end: dayjs.utc(
             `${MMMM} ${D}, ${YYYY} ${h2}:${mm2} ${A2}`,
             "MMMM D, YYYY h:mm A"
-          ).toISOString(),
+          ).tz("America/Los_Angeles", true).toISOString(),
         });
       }
     }

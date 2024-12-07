@@ -5,14 +5,12 @@ import getCanvasAssignments from "./canvas-calendars";
 import {JSDOM} from "jsdom";
 import {
   type CalendarsData,
-  type Credentials, RequestData,
+  type Credentials,
+  RequestData,
   type ResponseData,
   Status,
 } from "../types";
-import {
-  getGradescopeAssignments,
-  getGradescopeCourses,
-} from "./gradescope-calendars";
+import {getGradescopeAssignments, getGradescopeCourses,} from "./gradescope-calendars";
 import {Mutex} from "async-mutex";
 import {browserContextCache, getUserAgent} from "../puppeteer";
 
@@ -25,7 +23,7 @@ import {browserContextCache, getUserAgent} from "../puppeteer";
 async function waitForAuth(
   page: Page,
   credentials: Credentials
-): Promise<void> {
+): Promise<string | null> {
   logger.log("waitForAuth");
   await page.bringToFront();
   while (
@@ -52,6 +50,12 @@ async function waitForAuth(
           break;
         }
       } else if (form) {
+        const alert = await form.$(".alert-danger");
+        if (alert) {
+          return alert.evaluate(
+              (alert) => alert.textContent?.trim() ?? "unspecified error"
+          );
+        }
         logger.log("Entering credentials");
         const username = await form.$("input[name=\"username\"]");
         const password = await form.$("input[name=\"password\"]");
@@ -77,6 +81,7 @@ async function waitForAuth(
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
+  return null;
 }
 
 export const getCalendars = https.onCall<
@@ -119,7 +124,10 @@ export const getCalendars = https.onCall<
         logger.log("Getting UCSB response");
         const release = await mutex.acquire();
         await page.goto("https://my.sa.ucsb.edu/gold/StudentSchedule.aspx");
-        await waitForAuth(page, params);
+        const error = await waitForAuth(page, params);
+        if (error) {
+          throw error;
+        }
         release();
         const cookies = await page.cookies();
         page.close().then();
@@ -152,7 +160,10 @@ export const getCalendars = https.onCall<
         await page.goto("https://ucsb.instructure.com/");
         if (page.url() === "https://www.canvas.ucsb.edu/") {
           await page.goto("https://ucsb.instructure.com/login/saml");
-          await waitForAuth(page, params);
+          const error = await waitForAuth(page, params);
+          if (error) {
+            throw error;
+          }
         }
         if (page.url() !== "https://ucsb.instructure.com/") {
           await page.waitForNavigation();
@@ -176,7 +187,10 @@ export const getCalendars = https.onCall<
         logger.log("Getting Gradescope response");
         const release = await mutex.acquire();
         await page.goto("https://www.gradescope.com/auth/saml/ucsb");
-        await waitForAuth(page, params);
+        const error = await waitForAuth(page, params);
+        if (error) {
+          throw error;
+        }
         while (page.url() !== "https://www.gradescope.com/") {
           await page.waitForNavigation();
         }

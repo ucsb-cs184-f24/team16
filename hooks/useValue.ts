@@ -4,7 +4,14 @@ import {addListener, getValue, loadValue, removeListener, setValue} from "@/help
 export default function useValue<T>(
     key: string,
     persist: boolean = true
-): [() => T | null, (value: T | null) => void] {
+): [
+  {
+    (defaultValue: T): T;
+    (defaultValue?: null): T | null;
+    (defaultValue?: T | null): T | null;
+  },
+  (value: T | null) => void
+] {
   const [, forceUpdate] = useReducer(x => x + 1, 0);
   useEffect(() => {
     const idPromise = loadValue<T>(key, persist).then(
@@ -15,9 +22,13 @@ export default function useValue<T>(
     };
   }, [key, persist]);
   const getter = useCallback(
-      (defaultValue?: T) => getValue<T>(key, defaultValue),
+      (defaultValue = null) => getValue<T>(key, defaultValue),
       [key]
-  );
+  ) as {
+    (defaultValue: T): T;
+    (defaultValue?: null): T | null;
+    (defaultValue?: T | null): T | null;
+  };
   const setter = useCallback(
       (value: T | null) => setValue<T>(key, value, persist),
       [key, persist]

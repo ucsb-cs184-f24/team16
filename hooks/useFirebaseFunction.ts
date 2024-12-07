@@ -33,13 +33,14 @@ function addDuration(date: dayjs.Dayjs, duration: Duration): dayjs.Dayjs {
 interface CacheParams {
   key: string;
   duration?: Duration;
+  nonce?: string;
 }
 
 async function firebaseFunctionHelper<Params = unknown, Data = unknown, T extends Partial<Data> = Data>(
     callable: HttpsCallable<RequestData<Params, Data>, ResponseData<T>>,
     requestData: RequestData<Params, Data>,
     onSuccess: (data: T) => void,
-    onFail: () => void,
+    onFail: (err: any) => void,
     release: () => void,
 ) {
   callable(requestData).then(async result => {
@@ -50,26 +51,35 @@ async function firebaseFunctionHelper<Params = unknown, Data = unknown, T extend
         break;
       case Status.NOT_SIGNED_IN:
         console.error("firebase", callable, "not signed in");
-        onFail();
+        onFail("not signed in");
         break;
       case Status.INTERNAL_SERVER_ERROR:
         console.error("firebase", callable, "error", result.data.error);
-        onFail();
+        onFail(result.data.error);
         break;
     }
     release();
-  }, error => {
-    console.error("firebase useFunction", callable, "error", JSON.stringify(error, null, 2));
-    console.error(error?.stack);
-    onFail();
+  }, err => {
+    console.error("firebase useFunction", callable, "error", JSON.stringify(err, null, 2));
+    console.error(err?.stack);
+    onFail(err);
     release();
   });
 }
 
-async function isCacheValid(cache: CacheParams): Promise<boolean> {
+export async function isCacheValid(cache: CacheParams): Promise<boolean> {
   if (cache.duration) {
-    const ctimeStr = await AsyncStorage.getItem(`${cache}/ctime`);
-    return !!ctimeStr && addDuration(dayjs.unix(parseInt(ctimeStr)), cache.duration).diff(dayjs()) >= 0;
+    const {
+      [`${cache.key}/ctime`]: ctime,
+      [`${cache.key}/nonce`]: nonce,
+    } = Object.fromEntries(await AsyncStorage.multiGet([
+      `${cache.key}/ctime`,
+      `${cache.key}/nonce`,
+    ]));
+    const ctimeValid = !!ctime &&
+        addDuration(dayjs.unix(parseInt(ctime)), cache.duration).diff(dayjs()) >= 0;
+    const nonceValid = !cache.nonce || (nonce === cache.nonce);
+    return ctimeValid && nonceValid;
   } else {
     return true;
   }
@@ -94,7 +104,7 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
       params: Params | Promise<Params> | (() => Params | Promise<Params>);
       condition?: (data: Data | null) => boolean | Promise<boolean>;
       onFetch?: () => void;
-      onFail?: () => void;
+      onFail?: (err: any) => void;
     }): Data | null {
   const [getData, setData] = useValue<Data>(key, false);
   const data = getData();
@@ -128,10 +138,11 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
             setData(data);
             await AsyncStorage.multiSet([
               [cache.key, JSON.stringify(data)],
-              [`${cache}/ctime`, dayjs().unix().toString()]
+              [`${cache.key}/ctime`, dayjs().unix().toString()],
+              [`${cache.key}/nonce`, cache.nonce ?? ""],
             ]);
-          }, () => {
-            onFail();
+          }, err => {
+            onFail(err);
             triesRef.current++;
           }, release);
         } else {
@@ -141,8 +152,8 @@ export function useFirebaseFunction<Params = unknown, Data = unknown>(
           onFetch();
           await firebaseFunctionHelper(callable, requestData, data => {
             setData(data);
-          }, () => {
-            onFail();
+          }, err => {
+            onFail(err);
             triesRef.current++;
           }, release);
         }
@@ -175,7 +186,7 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
       params: Params | Promise<Params> | (() => Params | Promise<Params>),
       condition?: (data: Partial<Data> | null) => boolean | Promise<boolean>,
       onFetch?: (keys: (keyof Data)[]) => void
-      onFail?: () => void
+      onFail?: (err: any) => void
     }): Partial<Data> | null {
   const [getData, setData] = useValue<Partial<Data>>(key, false);
   const data = getData();
@@ -217,10 +228,11 @@ export function useFirebaseFunction2<Params = unknown, Data = unknown>(
             const now = dayjs().unix().toString();
             await AsyncStorage.multiSet(keys.flatMap(key => [
               [caches[key].key, JSON.stringify(data[key])],
-              [`${caches[key].key}/ctime`, now]
+              [`${caches[key].key}/ctime`, now],
+              [`${caches[key].key}/nonce`, caches[key].nonce ?? ""],
             ]));
-          }, () => {
-            onFail();
+          }, err => {
+            onFail(err);
             triesRef.current++;
           }, release);
         }

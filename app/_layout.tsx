@@ -8,8 +8,9 @@ import QuarterScreen from "@/app/quarter-screen";
 import Index from "@/app/index";
 import ExportScreen from './export-screen';
 import * as React from "react";
-import { Alert } from "react-native";
 import AddEventModal from '../components/NewEvent';
+import {TimelineEventProps} from "react-native-calendars";
+import {loadValue, setValue} from "@/helpers/storage";
 
 // format: YYYY-MM-DD HH:mm:ss
 
@@ -33,32 +34,39 @@ const Drawer = createDrawerNavigator();
 export default function RootLayout() {
   const [isModalVisible, setModalVisible] = React.useState(false);
 
-  const handleAddEvent = (title: string, start: string, end: string, summary: string) => {
+  function handleAddEvent(title: string, start: string, end: string, summary: string) {
     console.log('New Event:', { title, start, end, summary });
     // Add logic to save the new event
-  };
+
+    loadValue<TimelineEventProps[]>("custom events").then(
+        events => setValue<TimelineEventProps[]>("custom events", [
+          ...(events ?? []),
+          {title, start, end, summary}
+        ])
+    );
+  }
 
   return (
     <>
       <Drawer.Navigator
           drawerContent={() => <CustomDrawerContent/>} // Custom Drawer
-        screenOptions={{
-          drawerStyle: {
-            backgroundColor: 'white', // Optional: Customize drawer background
-            width: 300, // Set drawer width
-          },
-          headerShown: true,
-          headerLeft: () => (
-              <TouchableOpacity
-                  style={{
-                    paddingLeft: 16,
-                  }}
-                  onPress={() => router.back()}
-              >
-                <Ionicons name="arrow-back" size={26} color="black"/>
-              </TouchableOpacity>
-          ),
-        }}
+          screenOptions={{
+            drawerStyle: {
+              backgroundColor: 'white', // Optional: Customize drawer background
+              width: 300, // Set drawer width
+            },
+            headerShown: true,
+            headerLeft: () => (
+                <TouchableOpacity
+                    style={{
+                      paddingLeft: 16,
+                    }}
+                    onPress={() => router.back()}
+                >
+                  <Ionicons name="arrow-back" size={26} color="black"/>
+                </TouchableOpacity>
+            ),
+          }}
       >
         <Drawer.Screen
             name="index"
