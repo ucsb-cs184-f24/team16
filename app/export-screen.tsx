@@ -1,9 +1,10 @@
-import React, {SetStateAction, useState} from 'react';
+import {type SetStateAction, useState} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {Ionicons} from '@expo/vector-icons'; // For icons like hamburger and plus
 import createIcs from "@/helpers/create-ics";
 import RNShare from "react-native-share";
+import {Buffer} from "buffer";
 
 export interface SelectedFilters {
   courses: boolean;
@@ -26,10 +27,10 @@ export default function ExportScreen() {
 
   // const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
     const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
-      courses: false,
-      canvasEvents: false,
-      gradescopeEvents: false,
-      myEvents: false,
+      courses: true,
+      canvasEvents: true,
+      gradescopeEvents: true,
+      myEvents: true,
     });
 
     return (
@@ -88,10 +89,11 @@ export default function ExportScreen() {
   
         {/* Export Calendar Button */}
         <TouchableOpacity style={styles.button} onPress={() => {
+          // console.log(createIcs());
           RNShare.open({
             title: 'Share calendar',
             type: 'text/calendar',
-            url: `data:text/calendar;base64,${btoa(createIcs())}`,
+            url: `data:text/calendar;base64,${Buffer.from(createIcs()).toString("base64")}`,
             showAppsToView: true,
           }).then(() => console.log("calendar exported"), e => console.error(e));
         }}>

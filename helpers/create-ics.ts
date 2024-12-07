@@ -25,6 +25,16 @@ const UCSBDayToRRuleDay: Record<string, ICalWeekday> = {
   S: ICalWeekday.SA
 };
 
+const UCSBDayToNumber: Record<string, number> = {
+  U: 0,
+  M: 1,
+  T: 2,
+  W: 3,
+  R: 4,
+  F: 5,
+  S: 6
+};
+
 export default function createIcs(): string {
   const quarters = getValue<Quarters>("quarters");
   const calendars = getValue<CalendarsData>("calendars");
@@ -40,13 +50,27 @@ export default function createIcs(): string {
 
       for (const course of calendars.ucsbEvents.courses) {
         for (const session of course.sessions) {
-          const start = dayjs(`${first.format('YYYY-MM-DD')} ${session.start}`, "YYYY-MM-DD hh:mm a");
-          const end = dayjs(`${first.format('YYYY-MM-DD')} ${session.end}`, "YYYY-MM-DD hh:mm a");
+          const firstDay = Math.min(
+              ...session.days.map(day => UCSBDayToNumber[day])
+          );
+          let date = first;
+          while (date.day() !== firstDay) {
+            date = date.date(date.date() + 1);
+          }
+          const start = dayjs(
+              `${date.format('YYYY-MM-DD')} ${session.start}`,
+              "YYYY-MM-DD h:mm A"
+          );
+          const end = dayjs(
+              `${date.format('YYYY-MM-DD')} ${session.end}`,
+              "YYYY-MM-DD h:mm A"
+          );
           calendar.createEvent({
             start: start.toDate(),
             end: end.toDate(),
             repeating: {
               freq: ICalEventRepeatingFreq.WEEKLY,
+              startOfWeek: ICalWeekday.SU,
               byDay: session.days.map(day => UCSBDayToRRuleDay[day]),
               interval: 1,
               until: last.toDate(),
@@ -73,7 +97,7 @@ export default function createIcs(): string {
             name: "UCSB Finals",
           }]
         };
-        console.log(event);
+        // console.log(event);
         calendar.createEvent(event);
       }
     }
@@ -99,8 +123,8 @@ export default function createIcs(): string {
       for (const course of calendars.gradescopeCourses) {
         for (const assignment of course.assignments) {
           calendar.createEvent({
-            start: dayjs(assignment.due).toDate(),
-            end: dayjs(assignment.due).toDate(),
+            start: dayjs(assignment.due, "YYYY-MM-DD HH-mm-ss ZZ").toDate(),
+            end: dayjs(assignment.due, "YYYY-MM-DD HH-mm-ss ZZ").toDate(),
             summary: `${course.shortname} - ${assignment.name}`,
             description: assignment.href,
             status: ICalEventStatus.CONFIRMED,
