@@ -17,7 +17,7 @@ export default function Index() {
   const gradescopeFilter = useValue<boolean>("gradescope filter")[0](true);
   const customFilter = useValue<boolean>("custom filter")[0](true);
   const [calendars, calendarsErr] = useCalendars(getCredentials, setCredentials);
-  const customEvents = useValue<TimelineEventProps[]>("custom events")[0]([]);
+  const customEvents = useValue<Record<string, TimelineEventProps>>("custom events")[0]({});
   const quarters = useQuarters();
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
   const [marked, setMarked] = useState<MarkedDates>({});

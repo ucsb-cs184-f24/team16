@@ -1,10 +1,13 @@
-import {Image, StyleSheet} from 'react-native';
-import {useGlobalSearchParams} from "expo-router";
+import {Button, Image, StyleSheet} from 'react-native';
+import {router, useGlobalSearchParams} from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import {ThemedView} from "@/components/ThemedView";
 import {ThemedText} from "@/components/ThemedText";
+import {loadValue, setValue} from "@/helpers/storage";
+import {TimelineEventProps} from "react-native-calendars";
 
 export interface EventInfoParamList extends Record<string, string> {
+  id: string;
   title: string;
   start: string;
   end: string;
@@ -31,7 +34,7 @@ const styles = StyleSheet.create({
 });
 
 export default function EventInfo() {
-  const {title, start, end, summary} = useGlobalSearchParams<EventInfoParamList>();
+  const {id, title, start, end, summary} = useGlobalSearchParams<EventInfoParamList>();
   return (
       <ParallaxScrollView
           headerBackgroundColor={{light: '#A1CEDC', dark: '#1D3D47'}}
@@ -40,7 +43,7 @@ export default function EventInfo() {
                 source={require('@/assets/images/partial-react-logo.png')}
                 style={styles.reactLogo}
             />}
-          >
+      >
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="title">{title}</ThemedText>
         </ThemedView>
@@ -55,6 +58,18 @@ export default function EventInfo() {
             {summary}
           </ThemedText>
         </ThemedView>
+        {id?.startsWith("custom") ? (
+            <Button title="Delete"
+                    onPress={async () => {
+                      const events = await loadValue<Record<string, TimelineEventProps>>("custom events") ?? {};
+                      setValue<Record<string, TimelineEventProps>>(
+                          "custom events",
+                          Object.fromEntries(Object.entries(events).filter(([key]) => key !== id))
+                      );
+                      router.back();
+                    }}
+            />
+        ) : null}
       </ParallaxScrollView>
   );
 }

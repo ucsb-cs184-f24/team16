@@ -19,7 +19,7 @@ const letterToDay: Record<string, number> = {
 export function processCalendars(
     data: Partial<CalendarsData>,
     quarters: Quarters,
-    customEvents: TimelineEventProps[],
+    customEvents: Record<string, TimelineEventProps>,
     filters: {
       courses: boolean;
       canvas: boolean;
@@ -170,7 +170,7 @@ export function processCalendars(
   }
 
   if (filters.custom && customEvents) {
-    for (const event of customEvents) {
+    for (const event of Object.values(customEvents)) {
       let start = dayjs(event.start, "YYYY-MM-DD HH:mm:ss");
       let end = dayjs(event.end, "YYYY-MM-DD HH:mm:ss");
       const dateString1 = start.format("YYYY-MM-DD");

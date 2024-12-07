@@ -1,6 +1,6 @@
 import {useCallback, useState} from "react";
-import {Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import {Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
+import DateTimePicker, {type DateTimePickerEvent} from "@react-native-community/datetimepicker";
 
 interface AddEventModalProps {
   visible: boolean;
@@ -42,7 +42,8 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
     setPickerVisible(true);
   }, [end, start]);
 
-  const onPickerChange = useCallback((event: any, selectedDate: Date | undefined) => {
+  const onPickerChange = useCallback((event: DateTimePickerEvent, selectedDate: Date | undefined) => {
+    console.log("onPickerChange", event);
     if (selectedDate) {
       // Handle updating the temporary date based on picker mode
       const updatedDate = tempDate ? new Date(tempDate) : new Date();
@@ -67,7 +68,9 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
       }
     }
 
-    setPickerVisible(false); // Close the picker
+    if (Platform.OS !== "ios") {
+      setPickerVisible(false); // Close the picker
+    }
   }, [currentField, pickerMode, tempDate]);
 
   const resetFields = useCallback(() => {
@@ -90,85 +93,94 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
   }, [onClose, resetFields]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Add New Event</Text>
-
-          <Text style={styles.eventTitle}>Event Title:</Text>
-          <TextInput
-            placeholder="Title"
-            value={title}
-            onChangeText={setTitle}
-            style={styles.input}
-          />
-
-          <Text style={styles.eventTitle}>Start Time:</Text>
+      <Modal
+          visible={visible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={handleClose}
+      >
+        <View style={styles.modalContainer}>
           <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => showPicker("start", "date")}
+              style={styles.modalContent}
+              onPress={() => setPickerVisible(false)}
           >
-            <Text style={styles.buttonText}>{start ? start.split(" ")[0] : "Pick Date"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => showPicker("start", "time")}
-          >
-            <Text style={styles.buttonText}>{start ? start.split(" ")[1] : "Pick Time"}</Text>
-          </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add New Event</Text>
 
-          <Text style={styles.eventTitle}>End Time:</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => showPicker("end", "date")}
-          >
-            <Text style={styles.buttonText}>{end ? end.split(" ")[0] : "Pick Date"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => showPicker("end", "time")}
-          >
-            <Text style={styles.buttonText}>{end ? end.split(" ")[1] : "Pick Time"}</Text>
-          </TouchableOpacity>
+            <Text style={styles.eventTitle}>Event Title:</Text>
+            <TextInput
+                placeholder="Title"
+                value={title}
+                onChangeText={setTitle}
+                style={styles.input}
+            />
 
-          <Text style={styles.eventTitle}>Description:</Text>
-          <TextInput
-            placeholder="Summary"
-            value={summary}
-            onChangeText={setSummary}
-            style={styles.input}
-          />
-
-          <View style={styles.innerContainer}>
-            <TouchableOpacity style={styles.button1} onPress={handleAddEvent}>
-              <Text style={styles.buttonText}>Add</Text>
+            <Text style={styles.eventTitle}>Start Time:</Text>
+            <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => showPicker("start", "date")}
+            >
+              <Text style={styles.buttonText}>{start ? start.split(" ")[0] : "Pick Date"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button2} onPress={handleClose}>
-              <Text style={styles.buttonText}>Cancel</Text>
+            <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => showPicker("start", "time")}
+            >
+              <Text style={styles.buttonText}>{start ? start.split(" ")[1] : "Pick Time"}</Text>
             </TouchableOpacity>
-          </View>
+
+            <Text style={styles.eventTitle}>End Time:</Text>
+            <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => showPicker("end", "date")}
+            >
+              <Text style={styles.buttonText}>{end ? end.split(" ")[0] : "Pick Date"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => showPicker("end", "time")}
+            >
+              <Text style={styles.buttonText}>{end ? end.split(" ")[1] : "Pick Time"}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.eventTitle}>Description:</Text>
+            <TextInput
+                placeholder="Summary"
+                value={summary}
+                onChangeText={setSummary}
+                style={styles.input}
+            />
+
+            <View style={styles.innerContainer}>
+              <TouchableOpacity style={styles.button1} onPress={handleAddEvent}>
+                <Text style={styles.buttonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button2} onPress={handleClose}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+
+          {pickerVisible ? (
+              <DateTimePicker
+                  style={{
+                    backgroundColor: "white",
+                    zIndex: 2147483647
+                  }}
+                  minimumDate={
+                    (currentField === "start") || (start.length === 0) ? undefined : new Date(start)
+                  }
+                  maximumDate={
+                    (currentField === "end") || (end.length === 0) ? undefined : new Date(end)
+                  }
+                  value={tempDate || new Date()}
+                  mode={pickerMode}
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={onPickerChange}
+              />
+          ) : null}
         </View>
-
-        {pickerVisible ? (
-          <DateTimePicker
-              style={{
-                backgroundColor: "white",
-                zIndex: 2147483647
-              }}
-            value={tempDate || new Date()}
-            mode={pickerMode}
-            is24Hour={true}
-              display="spinner"
-            onChange={onPickerChange}
-          />
-        ) : null}
-      </View>
-    </Modal>
+      </Modal>
   );
 };
 

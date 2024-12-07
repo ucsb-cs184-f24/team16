@@ -17,103 +17,103 @@ export default function CustomDrawerContent() {
   const [isExpanded, setIsExpanded] = useState(false); // To toggle the filter section
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.username}>{getCredentials()?.username ?? ""}</Text>
+      <View style={styles.container}>
+        <Text style={styles.username}>{getCredentials()?.username ?? ""}</Text>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+        {/* Divider */}
+        <View style={styles.divider}/>
 
-      {/* Filters */}
-      <View>
-        <View style={styles.row}>
-          <View style={styles.leftSection}>
-            <Ionicons name="funnel-outline" size={26} color="black" />
-            <Text style={styles.text}>Filter</Text>
+        {/* Filters */}
+        <View>
+          <View style={styles.row}>
+            <View style={styles.leftSection}>
+              <Ionicons name="funnel-outline" size={26} color="black"/>
+              <Text style={styles.text}>Filter</Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
+              <Ionicons
+                  name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                  size={26}
+                  color="black"
+              />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-            <Ionicons
-              name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-              size={26}
-              color="black"
-            />
-          </TouchableOpacity>
+
+          {/* Expanded Filter Options */}
+          {isExpanded ? (
+              <View style={styles.filterOptions}>
+                {([
+                  {
+                    label: 'Courses',
+                    key: 'courses',
+                    getter: getCoursesFilter,
+                    setter: setCoursesFilter,
+                  },
+                  {
+                    label: 'Canvas Events',
+                    key: 'canvasEvents',
+                    getter: getCanvasFilter,
+                    setter: setCanvasFilter,
+                  },
+                  {
+                    label: 'Gradescope Events',
+                    key: 'gradescopeEvents',
+                    getter: getGradescopeFilter,
+                    setter: setGradescopeFilter,
+                  },
+                  {
+                    label: 'My Events',
+                    key: 'myEvents',
+                    getter: getCustomFilter,
+                    setter: setCustomFilter,
+                  },
+                ]).map(({label, key, getter, setter}) => (
+                    <TouchableOpacity
+                        key={key}
+                        style={styles.filterRow}
+                        onPress={() => setter(!getter())}
+                    >
+                      <CheckBox
+                          value={getter(false)}
+                          onValueChange={() => setter(!getter(false))}
+                      />
+                      <Text style={styles.filterText}>{label}</Text>
+                    </TouchableOpacity>
+                ))}
+              </View>
+          ) : null}
         </View>
 
-        {/* Expanded Filter Options */}
-        {isExpanded ? (
-          <View style={styles.filterOptions}>
-            {([
-              {
-                label: 'Courses',
-                key: 'courses',
-                getter: getCoursesFilter,
-                setter: setCoursesFilter,
-              },
-              {
-                label: 'Canvas Events',
-                key: 'canvasEvents',
-                getter: getCanvasFilter,
-                setter: setCanvasFilter,
-              },
-              {
-                label: 'Gradescope Events',
-                key: 'gradescopeEvents',
-                getter: getGradescopeFilter,
-                setter: setGradescopeFilter,
-              },
-              {
-                label: 'My Events',
-                key: 'myEvents',
-                getter: getCustomFilter,
-                setter: setCustomFilter,
-              },
-            ]).map(({label, key, getter, setter}) => (
-              <TouchableOpacity
-                  key={key}
-                style={styles.filterRow}
-                  onPress={() => setter(!getter())}
-              >
-                <CheckBox
-                    value={getter(false)}
-                    onValueChange={() => setter(!getter(false))}
-                />
-                <Text style={styles.filterText}>{label}</Text>
-              </TouchableOpacity>
-            ))}
+        {/* Divider */}
+        <View style={styles.divider}/>
+
+        {/* Export Calendar */}
+        <TouchableOpacity onPress={() => router.navigate({pathname: '/export-screen'})}>
+          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 0}}>
+            <Ionicons name="download-outline" size={26} color="black"/>
+            <Text style={{fontSize: 16, marginLeft: 8}}>Export Calendar</Text>
           </View>
-        ) : null}
+        </TouchableOpacity>
+
+        {/* Quarter Info */}
+        <TouchableOpacity onPress={() => router.navigate({pathname: '/quarter-screen'})}>
+          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 20}}>
+            <Ionicons name="information-circle-outline" size={26} color="black"/>
+            <Text style={{fontSize: 16, marginLeft: 8}}>Quarter Info</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Log out */}
+        <TouchableOpacity onPress={() => {
+          console.log("Logging out...");
+          setValue<Credentials>("credentials", null);
+        }}>
+          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 20}}>
+            <Ionicons name="log-out-outline" size={26} color="black"/>
+            <Text style={{fontSize: 16, marginLeft: 8}}>Log out</Text>
+          </View>
+        </TouchableOpacity>
       </View>
-
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Export Calendar */}
-      <TouchableOpacity onPress={() => router.navigate({ pathname: '/export-screen' })}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 0 }}>
-          <Ionicons name="download-outline" size={26} color="black" />
-          <Text style={{ fontSize: 16, marginLeft: 8 }}>Export Calendar</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Quarter Info */}
-      <TouchableOpacity onPress={() => router.navigate({ pathname: '/quarter-screen' })}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-          <Ionicons name="information-circle-outline" size={26} color="black" />
-          <Text style={{ fontSize: 16, marginLeft: 8 }}>Quarter Info</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Log out */}
-      <TouchableOpacity onPress={() => {
-        console.log("Logging out...");
-        setValue<Credentials>("credentials", null);
-      }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-          <Ionicons name="log-out-outline" size={26} color="black" />
-          <Text style={{ fontSize: 16, marginLeft: 8 }}>Log out</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
   );
 }
 

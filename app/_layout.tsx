@@ -35,97 +35,100 @@ export default function RootLayout() {
   const [isModalVisible, setModalVisible] = React.useState(false);
 
   function handleAddEvent(title: string, start: string, end: string, summary: string) {
-    console.log('New Event:', { title, start, end, summary });
+    console.log('New Event:', {title, start, end, summary});
     // Add logic to save the new event
 
-    loadValue<TimelineEventProps[]>("custom events").then(
-        events => setValue<TimelineEventProps[]>("custom events", [
-          ...(events ?? []),
-          {title, start, end, summary}
-        ])
+    loadValue<Record<string, TimelineEventProps>>("custom events").then(
+        events => {
+          const id = `custom:${Math.random().toString(36).substring(2)}`;
+          setValue<Record<string, TimelineEventProps>>("custom events", {
+            ...(events ?? {}),
+            [id]: {id, title, start, end, summary},
+          });
+        }
     );
   }
 
   return (
-    <>
-      <Drawer.Navigator
-          drawerContent={() => <CustomDrawerContent/>} // Custom Drawer
-          screenOptions={{
-            drawerStyle: {
-              backgroundColor: 'white', // Optional: Customize drawer background
-              width: 300, // Set drawer width
-            },
-            headerShown: true,
-            headerLeft: () => (
-                <TouchableOpacity
-                    style={{
-                      paddingLeft: 16,
-                    }}
-                    onPress={() => router.back()}
-                >
-                  <Ionicons name="arrow-back" size={26} color="black"/>
-                </TouchableOpacity>
-            ),
-          }}
-      >
-        <Drawer.Screen
-            name="index"
-            component={Index}
-            options={({navigation}) => ({
-              title: 'MyCalendar',
+      <>
+        <Drawer.Navigator
+            drawerContent={() => <CustomDrawerContent/>} // Custom Drawer
+            screenOptions={{
+              drawerStyle: {
+                backgroundColor: 'white', // Optional: Customize drawer background
+                width: 300, // Set drawer width
+              },
               headerShown: true,
               headerLeft: () => (
                   <TouchableOpacity
                       style={{
                         paddingLeft: 16,
                       }}
-                      onPress={() => navigation.toggleDrawer()}
+                      onPress={() => router.back()}
                   >
-                    <Ionicons name="menu" size={26} color="black"/>
+                    <Ionicons name="arrow-back" size={26} color="black"/>
                   </TouchableOpacity>
               ),
-              headerTitleAlign: 'center',
-              headerRight: () => (
-                  <TouchableOpacity
-                      style={{
-                        paddingRight: 16,
-                      }}
-                      onPress={() => setModalVisible(true)}
-                  >
-                    <Ionicons name="add-outline" size={26} color="black"/>
-                  </TouchableOpacity>
-              ),
-              headerStyle: {
-                backgroundColor: '#D3E1FB', // Set header background color here
-              },
-            })}
-        />
-        <Drawer.Screen
-            name="event-info"
-            options={{
-              title: "Event Information",
             }}
-            component={EventInfo}
-        />
-        <Drawer.Screen
-            name="quarter-screen"
-            component={QuarterScreen}
-            options={{
-              title: "Quarter Information",
-            }}
-        />
-        <Drawer.Screen
-            name="export-screen"
-            component={ExportScreen}
-            options={{
-              title: "Export Calendar",
-            }}
-        />
-       </Drawer.Navigator>
+        >
+          <Drawer.Screen
+              name="index"
+              component={Index}
+              options={({navigation}) => ({
+                title: 'MyCalendar',
+                headerShown: true,
+                headerLeft: () => (
+                    <TouchableOpacity
+                        style={{
+                          paddingLeft: 16,
+                        }}
+                        onPress={() => navigation.toggleDrawer()}
+                    >
+                      <Ionicons name="menu" size={26} color="black"/>
+                    </TouchableOpacity>
+                ),
+                headerTitleAlign: 'center',
+                headerRight: () => (
+                    <TouchableOpacity
+                        style={{
+                          paddingRight: 16,
+                        }}
+                        onPress={() => setModalVisible(true)}
+                    >
+                      <Ionicons name="add-outline" size={26} color="black"/>
+                    </TouchableOpacity>
+                ),
+                headerStyle: {
+                  backgroundColor: '#D3E1FB', // Set header background color here
+                },
+              })}
+          />
+          <Drawer.Screen
+              name="event-info"
+              options={{
+                title: "Event Information",
+              }}
+              component={EventInfo}
+          />
+          <Drawer.Screen
+              name="quarter-screen"
+              component={QuarterScreen}
+              options={{
+                title: "Quarter Information",
+              }}
+          />
+          <Drawer.Screen
+              name="export-screen"
+              component={ExportScreen}
+              options={{
+                title: "Export Calendar",
+              }}
+          />
+        </Drawer.Navigator>
         <AddEventModal
-          visible={isModalVisible}
-          onClose={() => setModalVisible(false)}
-          onAddEvent={handleAddEvent}
+            visible={isModalVisible}
+            onClose={() => setModalVisible(false)}
+            onAddEvent={handleAddEvent}
         />
       </>
   );
