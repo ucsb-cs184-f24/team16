@@ -10,6 +10,27 @@ index 747e161..05c2b8b 100644
      start: string;
      end: string;
      title: string;
+diff --git a/node_modules/react-native-calendars/src/timeline/NowIndicator.js b/node_modules/react-native-calendars/src/timeline/NowIndicator.js
+index 9d82188..8356c48 100644
+--- a/node_modules/react-native-calendars/src/timeline/NowIndicator.js
++++ b/node_modules/react-native-calendars/src/timeline/NowIndicator.js
+@@ -1,10 +1,15 @@
+-import React, { useMemo } from 'react';
++import React, {useEffect, useMemo, useReducer} from 'react';
+ import { View } from 'react-native';
+ import { calcTimeOffset } from './helpers/presenter';
+ import { HOUR_BLOCK_HEIGHT } from './Packer';
+ const NowIndicator = (props) => {
+     const { styles, width, left } = props;
+     const indicatorPosition = calcTimeOffset(HOUR_BLOCK_HEIGHT);
++    const [, forceUpdate] = useReducer(x => x + 1, 0);
++    useEffect(() => {
++      const id = setInterval(forceUpdate, 60 * 1000);
++      return () => clearInterval(id);
++    }, [forceUpdate]);
+     const nowIndicatorStyle = useMemo(() => {
+         return [styles.nowIndicator, { top: indicatorPosition, left }];
+     }, [indicatorPosition, left]);
 diff --git a/node_modules/react-native-calendars/src/timeline/Packer.js b/node_modules/react-native-calendars/src/timeline/Packer.js
 index ba99d93..721dbdc 100644
 --- a/node_modules/react-native-calendars/src/timeline/Packer.js
@@ -24,10 +45,25 @@ index ba99d93..721dbdc 100644
          ...event,
          top: (dayStartTime.diffHours(startTime) - dayStart) * hourBlockHeight,
 diff --git a/node_modules/react-native-calendars/src/timeline/Timeline.js b/node_modules/react-native-calendars/src/timeline/Timeline.js
-index 8eae6ce..9e1fdd7 100644
+index 8eae6ce..172cd95 100644
 --- a/node_modules/react-native-calendars/src/timeline/Timeline.js
 +++ b/node_modules/react-native-calendars/src/timeline/Timeline.js
-@@ -20,7 +20,7 @@ const Timeline = (props) => {
+@@ -2,7 +2,13 @@ import min from 'lodash/min';
+ import map from 'lodash/map';
+ import times from 'lodash/times';
+ import groupBy from 'lodash/groupBy';
+-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
++import React, {
++    useCallback,
++    useEffect,
++    useMemo,
++    useReducer,
++    useRef
++} from 'react';
+ import { View, ScrollView } from 'react-native';
+ import constants from '../commons/constants';
+ import { generateDay } from '../dateutils';
+@@ -20,7 +26,7 @@ const Timeline = (props) => {
          return typeof date === 'string' ? [date] : date;
      }, [date]);
      const groupedEvents = useMemo(() => {
@@ -36,3 +72,38 @@ index 8eae6ce..9e1fdd7 100644
      }, [events]);
      const pageEvents = useMemo(() => {
          return map(pageDates, d => groupedEvents[d] || []);
+@@ -72,7 +78,7 @@ const Timeline = (props) => {
+             onEventPress?.(event);
+         }
+     }, [onEventPress, eventTapped]);
+-    const renderEvents = (dayIndex) => {
++    const renderEvents = useCallback((dayIndex) => {
+         const events = packedEvents[dayIndex].map((event, eventIndex) => {
+             const onEventPress = () => _onEventPress(dayIndex, eventIndex);
+             return (<EventBlock key={eventIndex} index={eventIndex} event={event} styles={styles.current} format24h={format24h} onPress={onEventPress} renderEvent={renderEvent} testID={`${testID}.event.${event.id}`}/>);
+@@ -80,15 +86,20 @@ const Timeline = (props) => {
+         return (<View pointerEvents={'box-none'} style={[{ marginLeft: dayIndex === 0 ? timelineLeftInset : undefined }, styles.current.eventsContainer]}>
+         {events}
+       </View>);
+-    };
+-    const renderTimelineDay = (dayIndex) => {
+-        const indexOfToday = pageDates.indexOf(generateDay(new Date().toString()));
+-        const left = timelineLeftInset + indexOfToday * width / numberOfDays;
++    }, [packedEvents, _onEventPress, format24h, renderEvent, testID]);
++    const [, forceUpdate] = useReducer(x => x + 1, 0);
++    useEffect(() => () => {
++        const id = setInterval(forceUpdate, 24 * 60 * 60 * 1000);
++        return () => clearInterval(id);
++    }, [forceUpdate]);
++    const indexOfToday = pageDates.indexOf(generateDay(new Date().toString()));
++    const left = timelineLeftInset + indexOfToday * width / numberOfDays;
++    const renderTimelineDay = useCallback((dayIndex) => {
+         return (<React.Fragment key={dayIndex}>
+         {renderEvents(dayIndex)}
+         {indexOfToday !== -1 && showNowIndicator && <NowIndicator width={width / numberOfDays} left={left} styles={styles.current}/>}
+       </React.Fragment>);
+-    };
++    }, [renderEvents, indexOfToday, showNowIndicator, width, numberOfDays, left]);
+     return (<ScrollView 
+     // @ts-expect-error
+     ref={scrollView} style={styles.current.container} contentContainerStyle={[styles.current.contentStyle, { width: constants.screenWidth }]} showsVerticalScrollIndicator={false} {...scrollEvents} testID={testID}>
