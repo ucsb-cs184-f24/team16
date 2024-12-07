@@ -19,6 +19,7 @@ const letterToDay: Record<string, number> = {
 export function processCalendars(
     data: Partial<CalendarsData>,
     quarters: Quarters,
+    customEvents: TimelineEventProps[],
     filters: {
       courses: boolean;
       canvas: boolean;
@@ -26,7 +27,12 @@ export function processCalendars(
       custom: boolean;
     },
 ): [Record<string, TimelineEventProps[]>, MarkedDates] {
-  console.log("processCalendars", data, JSON.stringify(quarters, null, 2));
+  console.log(
+      "processCalendars",
+      data,
+      JSON.stringify(quarters, null, 2),
+      JSON.stringify(customEvents, null, 2),
+  );
   // return [{}, {}];
   const marked: MarkedDates = {};
   const eventsByDate: Record<string, TimelineEventProps[]> = {};
@@ -159,6 +165,40 @@ export function processCalendars(
             date: dateString2
           });
         }
+      }
+    }
+  }
+
+  if (filters.custom && customEvents) {
+    for (const event of customEvents) {
+      let start = dayjs(event.start, "YYYY-MM-DD HH:mm:ss");
+      let end = dayjs(event.end, "YYYY-MM-DD HH:mm:ss");
+      const dateString1 = start.format("YYYY-MM-DD");
+      const dateString2 = end.format("YYYY-MM-DD");
+      marked[dateString1] = {
+        marked: true
+      };
+      marked[dateString2] = {
+        marked: true
+      };
+      const dateString3 = start.hour(start.hour() - 1).format("YYYY-MM-DD");
+      const dateString4 = end.hour(end.hour() + 1).format("YYYY-MM-DD");
+      if (!eventsByDate[dateString3]) {
+        eventsByDate[dateString3] = [];
+      }
+      if (!eventsByDate[dateString4]) {
+        eventsByDate[dateString4] = [];
+      }
+      eventsByDate[dateString3].push({
+        ...event,
+        date: dateString3
+      });
+      if (dateString3 !== dateString4) {
+        console.log("Duplicating event", event);
+        eventsByDate[dateString4].push({
+          ...event,
+          date: dateString4
+        });
       }
     }
   }

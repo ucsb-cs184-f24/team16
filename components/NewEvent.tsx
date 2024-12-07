@@ -1,12 +1,5 @@
-import { useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import {type FC, useState} from "react";
+import {Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface AddEventModalProps {
@@ -15,7 +8,7 @@ interface AddEventModalProps {
   onAddEvent: (title: string, start: string, end: string, summary: string) => void;
 }
 
-const AddEventModal: React.FC<AddEventModalProps> = ({ visible, onClose, onAddEvent }) => {
+const AddEventModal: FC<AddEventModalProps> = ({visible, onClose, onAddEvent}) => {
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(""); // Start date-time in string format
   const [end, setEnd] = useState(""); // End date-time in string format
