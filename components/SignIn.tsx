@@ -4,12 +4,19 @@ import {ThemedText} from "@/components/ThemedText";
 import type {Credentials} from "@/types/firebase";
 import {setValue} from "@/helpers/storage";
 
-export default function SignIn() {
+interface SingInProps {
+  err: string | null;
+}
+
+export default function SignIn({err}: SingInProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   return (
       <View style={styles.container}>
         <ThemedText style={styles.title}>Sign In</ThemedText>
+        {err ? (
+            <ThemedText style={styles.errorText}>{err}</ThemedText>
+        ) : null}
         <TextInput
             style={styles.input}
             placeholder="UCSB Net ID"

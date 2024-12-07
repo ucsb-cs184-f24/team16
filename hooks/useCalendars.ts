@@ -1,38 +1,55 @@
-import {useFirebaseFunction2} from "@/hooks/useFirebaseFunction";
+import {isCacheValid, useFirebaseFunction2} from "@/hooks/useFirebaseFunction";
 import {getCalendars} from "@/helpers/firebase";
-import {Alert} from "react-native";
 import type {CalendarsData, Credentials} from "@/types/firebase";
+import {useState} from "react";
 
 export default function useCalendars(
     getCredentials: () => Credentials | null,
     setCredentials: (credential: null) => void
-): Partial<CalendarsData> | null {
-  return useFirebaseFunction2({
+): [Partial<CalendarsData> | null, any] {
+  const [err, setErr] = useState<any>(null);
+  const ucsbEventsCache = {
+    key: "calendars.ucsbEvents",
+    duration: {days: 14},
+    nonce: getCredentials()?.username,
+  };
+  const canvasEventsCache = {
+    key: "calendars.canvasEvents",
+    duration: {hours: 1},
+    nonce: getCredentials()?.username,
+  };
+  const gradescopeCoursesCache = {
+    key: "calendars.gradescopeCourses",
+    duration: {hours: 1},
+    nonce: getCredentials()?.username,
+  };
+  return [
+    useFirebaseFunction2({
     key: "calendars",
     caches: {
-      ucsbEvents: {
-        key: "calendars.ucsbEvents",
-        duration: {days: 14},
-      },
-      canvasEvents: {
-        key: "calendars.canvasEvents",
-        duration: {hours: 1},
-      },
-      gradescopeCourses: {
-        key: "calendars.gradescopeCourses",
-        duration: {hours: 1},
-      }
+      ucsbEvents: ucsbEventsCache,
+      canvasEvents: canvasEventsCache,
+      gradescopeCourses: gradescopeCoursesCache,
     },
     callable: getCalendars,
     params: getCredentials(),
-    condition: calendars => !!getCredentials() && (
-        !calendars?.gradescopeCourses || !calendars?.canvasEvents || !calendars?.ucsbEvents
-    ),
-    onFetch: (keys) => {
-      if ("ucsbEvents" in keys) {
-        Alert.alert("Courses need to update", "You may need to answer a Duo prompt.");
-      }
+      async condition(calendars) {
+        return !!getCredentials() && (
+            !(calendars?.gradescopeCourses && await isCacheValid(gradescopeCoursesCache)) ||
+            !(calendars?.canvasEvents && await isCacheValid(canvasEventsCache)) ||
+            !(calendars?.ucsbEvents && await isCacheValid(ucsbEventsCache))
+        )
+      },
+      onFetch(keys) {
+        // if ("ucsbEvents" in keys) {
+        //   Alert.alert("Courses need to update", "You may need to answer a Duo prompt.");
+        // }
     },
-    onFail: () => setCredentials(null),
-  });
+      onFail(err) {
+        setErr(err);
+        setCredentials(null);
+      },
+    }),
+    err
+  ];
 }

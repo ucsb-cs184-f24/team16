@@ -16,7 +16,7 @@ export default function Index() {
   const canvasFilter = useValue<boolean>("canvas filter")[0](true);
   const gradescopeFilter = useValue<boolean>("gradescope filter")[0](true);
   const customFilter = useValue<boolean>("custom filter")[0](true);
-  const calendars = useCalendars(getCredentials, setCredentials);
+  const [calendars, calendarsErr] = useCalendars(getCredentials, setCredentials);
   const customEvents = useValue<TimelineEventProps[]>("custom events")[0]([]);
   const quarters = useQuarters();
   const [eventsByDate, setEventsByDate] = useState<Record<string, TimelineEventProps[]>>({});
@@ -52,12 +52,13 @@ export default function Index() {
         ) : (
             <>
               <Text>Loading...</Text>
+              <Text>You might get a DUO prompt</Text>
             </>
         )}
 
       </View>
   ) : (
-      <SignIn/>
+      <SignIn err={calendarsErr ? String(calendarsErr) : null}/>
   );
 }
 

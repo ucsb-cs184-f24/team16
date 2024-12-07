@@ -6,16 +6,13 @@ import firebaseFunctionsTest from "firebase-functions-test";
 import {
   type CalendarsData,
   type Credentials,
-  type RequestData,
-  type ResponseData,
   type Quarter,
   type Quarters,
+  type RequestData,
+  type ResponseData,
   Status,
 } from "./types";
-import type {
-  CallableRequest,
-  Request,
-} from "firebase-functions/https";
+import type {CallableRequest, Request,} from "firebase-functions/https";
 import {getBrowser} from "./puppeteer";
 
 const featuresList = firebaseFunctionsTest({
@@ -57,6 +54,26 @@ test("test-get-calendars", async () => {
     ).toBeGreaterThan(0);
   }
 }, 120000);
+
+test("test-get-calendars-bad-credentials", async () => {
+  const calendarsResponse: ResponseData<CalendarsData> =
+      await featuresList.wrap<
+          CallableRequest<RequestData<Credentials | null, CalendarsData>>
+      >(getCalendars)({
+        data: {
+          params: {
+            username: "1",
+            password: "1",
+          },
+        },
+        rawRequest: {} as Request,
+      });
+  console.log("calendarsResponse", calendarsResponse);
+  expect(calendarsResponse.status).toBe(Status.INTERNAL_SERVER_ERROR);
+  if (calendarsResponse.status === Status.INTERNAL_SERVER_ERROR) {
+    expect(calendarsResponse.error).toBe("Invalid credentials.");
+  }
+});
 
 test("test-get-quarters", async () => {
   const quartersResponse: ResponseData<{
