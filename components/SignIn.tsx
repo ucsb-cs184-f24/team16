@@ -4,11 +4,11 @@ import {ThemedText} from "@/components/ThemedText";
 import type {Credentials} from "@/types/firebase";
 import {setValue} from "@/helpers/storage";
 
-interface SingInProps {
+interface SignInProps {
   err: string | null;
 }
 
-export default function SignIn({err}: SingInProps) {
+export default function SignIn({err}: SignInProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   return (
