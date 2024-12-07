@@ -8,11 +8,38 @@ import QuarterScreen from "@/app/quarter-screen";
 import Index from "@/app/index";
 import ExportScreen from './export-screen';
 import * as React from "react";
+import { Alert } from "react-native";
+import AddEventModal from '../components/NewEvent';
+
+// format: YYYY-MM-DD HH:mm:ss
+
+// Alert.prompt(
+//   "New Event",
+//   "Enter the event title below",
+//   [
+//     { text: "Cancel", style: "destructive", onPress: () => {} },
+//     {
+//       text: "Submit",
+//       onPress: (username) => {
+//         // update username
+//       },
+//     },
+//   ],
+//   "plain-text"
+// );
 
 const Drawer = createDrawerNavigator();
 
 export default function RootLayout() {
+  const [isModalVisible, setModalVisible] = React.useState(false);
+
+  const handleAddEvent = (title: string, start: string, end: string, summary: string) => {
+    console.log('New Event:', { title, start, end, summary });
+    // Add logic to save the new event
+  };
+
   return (
+    <>
       <Drawer.Navigator
           drawerContent={() => <CustomDrawerContent/>} // Custom Drawer
         screenOptions={{
@@ -55,7 +82,7 @@ export default function RootLayout() {
                       style={{
                         paddingRight: 16,
                       }}
-                      onPress={() => console.log('Plus sign pressed')}
+                      onPress={() => setModalVisible(true)}
                   >
                     <Ionicons name="add-outline" size={26} color="black"/>
                   </TouchableOpacity>
@@ -86,6 +113,12 @@ export default function RootLayout() {
               title: "Export Calendar",
             }}
         />
-      </Drawer.Navigator>
+       </Drawer.Navigator>
+        <AddEventModal
+          visible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          onAddEvent={handleAddEvent}
+        />
+      </>
   );
 }

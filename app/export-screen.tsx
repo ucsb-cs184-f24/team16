@@ -90,7 +90,7 @@ export default function ExportScreen() {
             <Ionicons name="download-outline" size={20} color="white" />
             <Text style={styles.buttonText}>Export</Text>
         </View>
-    </TouchableOpacity>
+        </TouchableOpacity>
       </View>
     );
   }

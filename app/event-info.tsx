@@ -39,8 +39,8 @@ export default function EventInfo() {
             <Image
                 source={require('@/assets/images/partial-react-logo.png')}
                 style={styles.reactLogo}
-            />
-          }>
+            />}
+          >
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="title">{title}</ThemedText>
         </ThemedView>
