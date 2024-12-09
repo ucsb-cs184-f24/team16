@@ -38,6 +38,9 @@ UI designer
   - Help others debug issues for updated app initialization
 
 ### Boming Kong
+- Code Contributions
+  - Implement basic API call template
+  - Implement Quarter + Student info page
 - Contribution
   - Discover login issue during evaluation
   - Discover UI bugs
