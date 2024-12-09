@@ -1,4 +1,4 @@
-# team06
+# Team 16 -- Calendar
 
 A Calendar app that displays the course and assignment schedules for UCSB students.
 The course schedule would be from UCSB, and the assignment schedules would be from Canvas.
