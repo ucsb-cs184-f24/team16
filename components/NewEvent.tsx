@@ -42,16 +42,36 @@ export default function AddEventModal({visible, onClose, onAddEvent}: AddEventMo
     setPickerVisible(true);
   }, [end, start]);
 
-  const onPickerChange = (event: DateTimePickerEvent, selectedDate: Date | undefined) => {
+  const onPickerChange = useCallback((event: DateTimePickerEvent, selectedDate: Date | undefined) => {
     console.log("onPickerChange", event);
     if (selectedDate) {
-      setTempDate(selectedDate);
+      // Handle updating the temporary date based on picker mode
+      const updatedDate = tempDate ? new Date(tempDate) : new Date();
+      if (pickerMode === "date") {
+        // Update only the date part
+        updatedDate.setFullYear(selectedDate.getFullYear());
+        updatedDate.setMonth(selectedDate.getMonth());
+        updatedDate.setDate(selectedDate.getDate());
+      } else if (pickerMode === "time") {
+        // Update only the time part
+        updatedDate.setHours(selectedDate.getHours());
+        updatedDate.setMinutes(selectedDate.getMinutes());
+        updatedDate.setSeconds(0);
+      }
+
+      // Update the corresponding field (start or end) with the formatted string
+      const formattedDate = formatDateTime(updatedDate);
+      if (currentField === "start") {
+        setStart(formattedDate);
+      } else if (currentField === "end") {
+        setEnd(formattedDate);
+      }
     }
 
     if (Platform.OS !== "ios") {
       setPickerVisible(false); // Close the picker
     }
-  };
+  }, [currentField, pickerMode, tempDate]);
 
   const resetFields = useCallback(() => {
     setTitle("");
