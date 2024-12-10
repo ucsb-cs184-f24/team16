@@ -31,9 +31,13 @@ export async function loadValue<T>(key: string, persist: boolean = true): Promis
   try {
     if (!(key in storage)) {
       const result = persist ? await AsyncStorage.getItem(key) : null;
-      const value: T | null = result ? JSON.parse(result) : null;
-      storage[key] = {value, listeners: {}};
-      return value;
+      if (result) {
+        const value: T | null = JSON.parse(result);
+        storage[key] = {value, listeners: {}};
+        return value;
+      } else {
+        return null;
+      }
     } else {
       return storage[key].value;
     }
@@ -49,7 +53,7 @@ export function getValue<T>(
     key: string, defaultValue: T | null = null
 ): T | null {
   if (key in storage) {
-    return storage[key].value === null ? defaultValue : storage[key].value;
+    return storage[key].value;
   } else {
     return defaultValue;
   }
@@ -81,10 +85,15 @@ export function setValue<T>(key: string, value: T | null, persist: boolean = tru
 
 export function addListener<T>(key: string, listener: Listener<T>): string {
   const id = Math.random().toString(36).substring(2);
+  if (!(key in storage)) {
+    storage[key] = {value: null, listeners: {}};
+  }
   storage[key].listeners[id] = listener;
   return id;
 }
 
 export function removeListener(key: string, id: string): void {
-  delete storage[key].listeners[id];
+  if (key in storage) {
+    delete storage[key].listeners[id];
+  }
 }
